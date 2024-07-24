@@ -11,9 +11,9 @@
         <Title>由于作者太懒了专门开发的代码生成器，不过是unity版的</Title>
         <Description>一些unity的内容生成</Description>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
-        <!--   <PackageProjectUrl>https://github.com/this-til/Lombok</PackageProjectUrl>
-           <RepositoryUrl>https://github.com/this-til/Lombok</RepositoryUrl>
-           <RepositoryType>git</RepositoryType>-->
+        <PackageProjectUrl>https://github.com/this-til/Unity.Lombok</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/this-til/Unity.Lombok</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
         <PackageTags>lombok dotnet source-generators roslyn</PackageTags>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <Copyright>2024 © til</Copyright>
@@ -36,7 +36,7 @@
         <None Include="Source\**" Pack="True" PackagePath="src"/>
         <None Remove="Test\**"/>
     </ItemGroup>
-    
+
 
     <ItemGroup>
         <Compile Remove="Test\**"/>
