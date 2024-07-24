@@ -1,0 +1,12 @@
+D:\Project\CSharp\Utils\Unity.Lombok\obj\Debug\netstandard2.0\Unity.Lombok.csproj.AssemblyReference.cache
+D:\Project\CSharp\Utils\Unity.Lombok\obj\Debug\netstandard2.0\Unity.Lombok.GeneratedMSBuildEditorConfig.editorconfig
+D:\Project\CSharp\Utils\Unity.Lombok\obj\Debug\netstandard2.0\Unity.Lombok.AssemblyInfoInputs.cache
+D:\Project\CSharp\Utils\Unity.Lombok\obj\Debug\netstandard2.0\Unity.Lombok.AssemblyInfo.cs
+D:\Project\CSharp\Utils\Unity.Lombok\obj\Debug\netstandard2.0\Unity.Lombok.csproj.CoreCompileInputs.cache
+D:\Project\CSharp\Utils\Unity.Lombok\bin\Debug\netstandard2.0\Unity.Lombok.deps.json
+D:\Project\CSharp\Utils\Unity.Lombok\bin\Debug\netstandard2.0\Unity.Lombok.dll
+D:\Project\CSharp\Utils\Unity.Lombok\bin\Debug\netstandard2.0\Unity.Lombok.pdb
+D:\Project\CSharp\Utils\Unity.Lombok\bin\Debug\netstandard2.0\Unity.Lombok.xml
+D:\Project\CSharp\Utils\Unity.Lombok\obj\Debug\netstandard2.0\Unity.Lombok.dll
+D:\Project\CSharp\Utils\Unity.Lombok\obj\Debug\netstandard2.0\Unity.Lombok.xml
+D:\Project\CSharp\Utils\Unity.Lombok\obj\Debug\netstandard2.0\Unity.Lombok.pdb

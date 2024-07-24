@@ -1,0 +1,14 @@
+D:\Project\CSharp\Utils\Unity.Lombok\Test\obj\Debug\netstandard2.0\Unity.Lombok.Test.csproj.AssemblyReference.cache
+D:\Project\CSharp\Utils\Unity.Lombok\Test\obj\Debug\netstandard2.0\Unity.Lombok.Test.GeneratedMSBuildEditorConfig.editorconfig
+D:\Project\CSharp\Utils\Unity.Lombok\Test\obj\Debug\netstandard2.0\Unity.Lombok.Test.AssemblyInfoInputs.cache
+D:\Project\CSharp\Utils\Unity.Lombok\Test\obj\Debug\netstandard2.0\Unity.Lombok.Test.AssemblyInfo.cs
+D:\Project\CSharp\Utils\Unity.Lombok\Test\obj\Debug\netstandard2.0\Unity.Lombok.Test.csproj.CoreCompileInputs.cache
+D:\Project\CSharp\Utils\Unity.Lombok\Test\bin\Debug\netstandard2.0\Unity.Lombok.Test.deps.json
+D:\Project\CSharp\Utils\Unity.Lombok\Test\bin\Debug\netstandard2.0\Unity.Lombok.Test.dll
+D:\Project\CSharp\Utils\Unity.Lombok\Test\bin\Debug\netstandard2.0\Unity.Lombok.Test.pdb
+D:\Project\CSharp\Utils\Unity.Lombok\Test\bin\Debug\netstandard2.0\Unity.Lombok.dll
+D:\Project\CSharp\Utils\Unity.Lombok\Test\bin\Debug\netstandard2.0\Unity.Lombok.pdb
+D:\Project\CSharp\Utils\Unity.Lombok\Test\bin\Debug\netstandard2.0\Unity.Lombok.xml
+D:\Project\CSharp\Utils\Unity.Lombok\Test\obj\Debug\netstandard2.0\Unity.Lo.139C0BCC.Up2Date
+D:\Project\CSharp\Utils\Unity.Lombok\Test\obj\Debug\netstandard2.0\Unity.Lombok.Test.dll
+D:\Project\CSharp\Utils\Unity.Lombok\Test\obj\Debug\netstandard2.0\Unity.Lombok.Test.pdb

@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
+  <metadata>
+    <id>Unity.Lombok</id>
+    <version>1.0.0</version>
+    <title>由于作者太懒了专门开发的代码生成器，不过是unity版的</title>
+    <authors>til</authors>
+    <license type="expression">MIT</license>
+    <licenseUrl>https://licenses.nuget.org/MIT</licenseUrl>
+    <readme>README.md</readme>
+    <description>一些unity的内容生成</description>
+    <copyright>2024 © til</copyright>
+    <tags>lombok dotnet source-generators roslyn</tags>
+    <repository type="git" />
+    <dependencies>
+      <group targetFramework=".NETStandard2.0">
+        <dependency id="Til.Lombok" version="1.1.14" exclude="Build,Analyzers" />
+      </group>
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="D:\Project\CSharp\Utils\Unity.Lombok\bin\Debug\netstandard2.0\Unity.Lombok.dll" target="lib\netstandard2.0\Unity.Lombok.dll" />
+    <file src="D:\Project\CSharp\Utils\Unity.Lombok\bin\Debug\netstandard2.0\Unity.Lombok.xml" target="lib\netstandard2.0\Unity.Lombok.xml" />
+    <file src="D:\Project\CSharp\Utils\Unity.Lombok\README.md" target="\README.md" />
+    <file src="D:\Project\CSharp\Utils\Unity.Lombok\bin\Debug\netstandard2.0\Unity.Lombok.dll" target="analyzers\dotnet\cs\Unity.Lombok.dll" />
+  </files>
+</package>

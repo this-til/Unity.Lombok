@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "dgSpecHash": "IwZRW4jIFjP4quFkyQCDpI7lx1HzxMbNP9FV1KByZJ/DaNtIf9ETACmaMeY+FtiecbLrCCmcqsFeYTGCMZVIUg==",
+  "success": true,
+  "projectFilePath": "D:\\Project\\CSharp\\Utils\\Unity.Lombok\\Test\\Unity.Lombok.Test.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\til\\.nuget\\packages\\microsoft.netcore.platforms\\1.1.0\\microsoft.netcore.platforms.1.1.0.nupkg.sha512",
+    "C:\\Users\\til\\.nuget\\packages\\netstandard.library\\2.0.3\\netstandard.library.2.0.3.nupkg.sha512",
+    "C:\\Users\\til\\.nuget\\packages\\til.lombok\\1.1.14\\til.lombok.1.1.14.nupkg.sha512"
+  ],
+  "logs": []
+}
