@@ -4,9 +4,8 @@ using Til.Unity.Lombok;
 namespace AABB {
     [ILombok]
     public partial class Test {
-        [BufferField] public int x;
-        [BufferField] public int y;
-        [BufferField] public int z;
+        [BufferField] [Get] [Set] public int x;
+        [BufferField] [Get] [Set] public int y;
+        [BufferField] [Get] [Set] public int z;
     }
-    
 }

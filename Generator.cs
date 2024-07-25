@@ -14,6 +14,7 @@ using Til.Lombok;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace Til.Unity.Lombok {
+
     [Generator]
     public sealed class BufferSerialization : IIncrementalGenerator {
         private static readonly string AttributeName = typeof(ILombokAttribute).FullName!;
@@ -85,652 +86,13 @@ namespace Til.Unity.Lombok {
                 return GeneratorResult.Empty;
             }
 
-            List<StatementSyntax> readFieldStatement = new List<StatementSyntax>();
-            List<StatementSyntax> readDeltaFieldStatement = new List<StatementSyntax>();
-
-            List<StatementSyntax> writeFieldStatement = new List<StatementSyntax>();
-            List<StatementSyntax> writeDeltaFieldStatement = new List<StatementSyntax>();
-
-            List<StatementSyntax> duplicateValueFieldStatement = new List<StatementSyntax>();
-
-            bool isValueType = (semanticModel.GetSymbolInfo(
-                                       contextTargetNode
-                                   )
-                                   .Symbol as ITypeSymbol)?.IsValueType
-                               ?? false;
-
-            if (!isValueType) {
-                readFieldStatement.Add(
-                    LocalDeclarationStatement(
-                        VariableDeclaration(
-                            ParseTypeName(
-                                "bool"
-                            ),
-                            SeparatedList(
-                                new[] {
-                                    VariableDeclarator(
-                                        "isNull"
-                                    )
-                                }
-                            )
-                        )
-                    )
-                );
-                readFieldStatement.Add(
-                    ExpressionStatement(
-                        InvocationExpression(
-                            IdentifierName(
-                                "Unity.Netcode.ByteUnpacker.ReadValueBitPacked"
-                            ),
-                            ArgumentList(
-                                SeparatedList(
-                                    new[] {
-                                        Argument(
-                                            IdentifierName(
-                                                "reader"
-                                            )
-                                        ),
-                                        Argument(
-                                                IdentifierName(
-                                                    "isNull"
-                                                )
-                                            )
-                                            .WithRefKindKeyword(
-                                                Token(
-                                                    SyntaxKind.OutKeyword
-                                                )
-                                            )
-                                    }
-                                )
-                            )
-                        )
-                    )
-                );
-
-                readFieldStatement.Add(
-                    IfStatement(
-                        IdentifierName(
-                            "isNull"
-                        ),
-                        Block(
-                            ExpressionStatement(
-                                AssignmentExpression(
-                                    SyntaxKind.SimpleAssignmentExpression,
-                                    IdentifierName(
-                                        "value"
-                                    ),
-                                    LiteralExpression(
-                                        SyntaxKind.NullLiteralExpression
-                                    )
-                                )
-                            ),
-                            ReturnStatement(
-                            )
-                        )
-                    )
-                );
-
-                readFieldStatement.Add(
-                    ExpressionStatement(
-                        AssignmentExpression(
-                            SyntaxKind.SimpleAssignmentExpression,
-                            IdentifierName(
-                                "value"
-                            ),
-                            ObjectCreationExpression(
-                                    ParseTypeName(
-                                        contextTargetNode.Identifier.Text
-                                    )
-                                )
-                                .WithArgumentList(
-                                    ArgumentList()
-                                )
-                        )
-                    )
-                    /*IfStatement(
-                        BinaryExpression(
-                            SyntaxKind.EqualsExpression,
-                            IdentifierName(
-                                "value"
-                            ),
-                            LiteralExpression(
-                                SyntaxKind.NullLiteralExpression
-                            )
-                        ),
-                        Block(
-                            ExpressionStatement(
-                                AssignmentExpression(
-                                    SyntaxKind.SimpleAssignmentExpression,
-                                    IdentifierName(
-                                        "value"
-                                    ),
-                                    ObjectCreationExpression(
-                                            ParseTypeName(
-                                                contextTargetNode.Identifier.Text
-                                            )
+            bool isNotValueType = !((semanticModel.GetSymbolInfo(
+                                            contextTargetNode
                                         )
-                                        .WithArgumentList(
-                                            ArgumentList()
-                                        )
-                                )
-                            )
-                        )
-                    )*/
-                );
+                                        .Symbol as ITypeSymbol)?.IsValueType
+                                    ?? false);
 
-                readDeltaFieldStatement.Add(
-                    LocalDeclarationStatement(
-                        VariableDeclaration(
-                            ParseTypeName(
-                                "bool"
-                            ),
-                            SeparatedList(
-                                new[] {
-                                    VariableDeclarator(
-                                        "isNull"
-                                    )
-                                }
-                            )
-                        )
-                    )
-                );
-                readDeltaFieldStatement.Add(
-                    ExpressionStatement(
-                        InvocationExpression(
-                            IdentifierName(
-                                "Unity.Netcode.ByteUnpacker.ReadValueBitPacked"
-                            ),
-                            ArgumentList(
-                                SeparatedList(
-                                    new[] {
-                                        Argument(
-                                            IdentifierName(
-                                                "reader"
-                                            )
-                                        ),
-                                        Argument(
-                                                IdentifierName(
-                                                    "isNull"
-                                                )
-                                            )
-                                            .WithRefKindKeyword(
-                                                Token(
-                                                    SyntaxKind.OutKeyword
-                                                )
-                                            )
-                                    }
-                                )
-                            )
-                        )
-                    )
-                );
-
-                readDeltaFieldStatement.Add(
-                    IfStatement(
-                        IdentifierName(
-                            "isNull"
-                        ),
-                        Block(
-                            ExpressionStatement(
-                                AssignmentExpression(
-                                    SyntaxKind.SimpleAssignmentExpression,
-                                    IdentifierName(
-                                        "value"
-                                    ),
-                                    LiteralExpression(
-                                        SyntaxKind.NullLiteralExpression
-                                    )
-                                )
-                            ),
-                            ReturnStatement(
-                            )
-                        )
-                    )
-                );
-
-                readDeltaFieldStatement.Add(
-                    IfStatement(
-                        BinaryExpression(
-                            SyntaxKind.EqualsExpression,
-                            IdentifierName(
-                                "value"
-                            ),
-                            LiteralExpression(
-                                SyntaxKind.NullLiteralExpression
-                            )
-                        ),
-                        Block(
-                            ExpressionStatement(
-                                AssignmentExpression(
-                                    SyntaxKind.SimpleAssignmentExpression,
-                                    IdentifierName(
-                                        "value"
-                                    ),
-                                    ObjectCreationExpression(
-                                            ParseTypeName(
-                                                contextTargetNode.Identifier.Text
-                                            )
-                                        )
-                                        .WithArgumentList(
-                                            ArgumentList()
-                                        )
-                                )
-                            )
-                        )
-                    )
-                );
-
-                writeFieldStatement.Add(
-                    IfStatement(
-                        BinaryExpression(
-                            SyntaxKind.EqualsExpression,
-                            IdentifierName(
-                                "value"
-                            ),
-                            LiteralExpression(
-                                SyntaxKind.NullLiteralExpression
-                            )
-                        ),
-                        Block(
-                            ExpressionStatement(
-                                InvocationExpression(
-                                    IdentifierName(
-                                        "Unity.Netcode.BytePacker.WriteValuePacked"
-                                    ),
-                                    ArgumentList(
-                                        SeparatedList(
-                                            new[] {
-                                                Argument(
-                                                    IdentifierName(
-                                                        "reader"
-                                                    )
-                                                ),
-                                                Argument(
-                                                    IdentifierName(
-                                                        "true"
-                                                    )
-                                                ),
-                                            }
-                                        )
-                                    )
-                                )
-                            ),
-                            ReturnStatement()
-                        )
-                    )
-                );
-
-                writeDeltaFieldStatement.Add(
-                    IfStatement(
-                        BinaryExpression(
-                            SyntaxKind.EqualsExpression,
-                            IdentifierName(
-                                "value"
-                            ),
-                            LiteralExpression(
-                                SyntaxKind.NullLiteralExpression
-                            )
-                        ),
-                        Block(
-                            ExpressionStatement(
-                                InvocationExpression(
-                                    IdentifierName(
-                                        "Unity.Netcode.BytePacker.WriteValuePacked"
-                                    ),
-                                    ArgumentList(
-                                        SeparatedList(
-                                            new[] {
-                                                Argument(
-                                                    IdentifierName(
-                                                        "reader"
-                                                    )
-                                                ),
-                                                Argument(
-                                                    IdentifierName(
-                                                        "true"
-                                                    )
-                                                ),
-                                            }
-                                        )
-                                    )
-                                )
-                            ),
-                            ReturnStatement()
-                        )
-                    )
-                );
-
-                duplicateValueFieldStatement.Add(
-                    IfStatement(
-                        BinaryExpression(
-                            SyntaxKind.EqualsExpression,
-                            IdentifierName(
-                                "value"
-                            ),
-                            LiteralExpression(
-                                SyntaxKind.NullLiteralExpression
-                            )
-                        ),
-                        Block(
-                            ExpressionStatement(
-                                AssignmentExpression(
-                                    SyntaxKind.SimpleAssignmentExpression,
-                                    IdentifierName(
-                                        "duplicatedValue"
-                                    ),
-                                    IdentifierName(
-                                        "null"
-                                    )
-                                )
-                            ),
-                            ReturnStatement()
-                        )
-                    )
-                );
-
-                duplicateValueFieldStatement.Add(
-                    IfStatement(
-                        BinaryExpression(
-                            SyntaxKind.EqualsExpression,
-                            IdentifierName(
-                                "duplicatedValue"
-                            ),
-                            LiteralExpression(
-                                SyntaxKind.NullLiteralExpression
-                            )
-                        ),
-                        Block(
-                            ExpressionStatement(
-                                AssignmentExpression(
-                                    SyntaxKind.SimpleAssignmentExpression,
-                                    IdentifierName(
-                                        "duplicatedValue"
-                                    ),
-                                    ObjectCreationExpression(
-                                            ParseTypeName(
-                                                contextTargetNode.Identifier.Text
-                                            )
-                                        )
-                                        .WithArgumentList(
-                                            ArgumentList()
-                                        )
-                                )
-                            )
-                        )
-                    )
-                );
-            }
-
-            foreach (CSharpSyntaxNode cSharpSyntaxNode in fieldList) {
-                string type = cSharpSyntaxNode is VariableDeclaratorSyntax variableDeclaratorSyntax
-                    ? ((VariableDeclarationSyntax)variableDeclaratorSyntax.Parent!).Type.ToString()
-                    : ((PropertyDeclarationSyntax)cSharpSyntaxNode).Type.ToString();
-
-                readFieldStatement.Add(
-                    ExpressionStatement(
-                        InvocationExpression(
-                            MemberAccessExpression(
-                                SyntaxKind.SimpleMemberAccessExpression,
-                                IdentifierName(
-                                    $"Unity.Netcode.NetworkVariableSerialization<{type}>"
-                                ),
-                                IdentifierName(
-                                    "Read"
-                                )
-                            ),
-                            ArgumentList(
-                                SeparatedList(
-                                    new List<ArgumentSyntax>() {
-                                        Argument(
-                                            IdentifierName(
-                                                "reader"
-                                            )
-                                        ),
-                                        Argument(
-                                                MemberAccessExpression(
-                                                    SyntaxKind.SimpleMemberAccessExpression,
-                                                    IdentifierName(
-                                                        "value"
-                                                    ),
-                                                    IdentifierName(
-                                                        cSharpSyntaxNode.ToString()
-                                                    )
-                                                )
-                                            )
-                                            .WithRefKindKeyword(
-                                                Token(
-                                                    SyntaxKind.RefKeyword
-                                                )
-                                            )
-                                    }
-                                )
-                            )
-                        )
-                    )
-                );
-
-                readDeltaFieldStatement.Add(
-                    ExpressionStatement(
-                        InvocationExpression(
-                            MemberAccessExpression(
-                                SyntaxKind.SimpleMemberAccessExpression,
-                                IdentifierName(
-                                    $"Unity.Netcode.NetworkVariableSerialization<{type}>"
-                                ),
-                                IdentifierName(
-                                    "ReadDelta"
-                                )
-                            ),
-                            ArgumentList(
-                                SeparatedList(
-                                    new List<ArgumentSyntax>() {
-                                        Argument(
-                                            IdentifierName(
-                                                "reader"
-                                            )
-                                        ),
-                                        Argument(
-                                                MemberAccessExpression(
-                                                    SyntaxKind.SimpleMemberAccessExpression,
-                                                    IdentifierName(
-                                                        "value"
-                                                    ),
-                                                    IdentifierName(
-                                                        cSharpSyntaxNode.ToString()
-                                                    )
-                                                )
-                                            )
-                                            .WithRefKindKeyword(
-                                                Token(
-                                                    SyntaxKind.RefKeyword
-                                                )
-                                            )
-                                    }
-                                )
-                            )
-                        )
-                    )
-                );
-
-                writeFieldStatement.Add(
-                    ExpressionStatement(
-                        InvocationExpression(
-                            MemberAccessExpression(
-                                SyntaxKind.SimpleMemberAccessExpression,
-                                IdentifierName(
-                                    $"Unity.Netcode.NetworkVariableSerialization<{type}>"
-                                ),
-                                IdentifierName(
-                                    "Write"
-                                )
-                            ),
-                            ArgumentList(
-                                SeparatedList(
-                                    new List<ArgumentSyntax>() {
-                                        Argument(
-                                            IdentifierName(
-                                                "writer"
-                                            )
-                                        ),
-                                        Argument(
-                                                MemberAccessExpression(
-                                                    SyntaxKind.SimpleMemberAccessExpression,
-                                                    IdentifierName(
-                                                        "value"
-                                                    ),
-                                                    IdentifierName(
-                                                        cSharpSyntaxNode.ToString()
-                                                    )
-                                                )
-                                            )
-                                            .WithRefKindKeyword(
-                                                Token(
-                                                    SyntaxKind.RefKeyword
-                                                )
-                                            )
-                                    }
-                                )
-                            )
-                        )
-                    )
-                );
-
-                writeDeltaFieldStatement.Add(
-                    ExpressionStatement(
-                        InvocationExpression(
-                            IdentifierName(
-                                $"Unity.Netcode.NetworkVariableSerialization<{type}>.WriteDelta"
-                            ),
-                            ArgumentList(
-                                SeparatedList(
-                                    new List<ArgumentSyntax>() {
-                                        Argument(
-                                            IdentifierName(
-                                                "writer"
-                                            )
-                                        ),
-                                        Argument(
-                                                MemberAccessExpression(
-                                                    SyntaxKind.SimpleMemberAccessExpression,
-                                                    IdentifierName(
-                                                        "value"
-                                                    ),
-                                                    IdentifierName(
-                                                        cSharpSyntaxNode.ToString()
-                                                    )
-                                                )
-                                            )
-                                            .WithRefKindKeyword(
-                                                Token(
-                                                    SyntaxKind.RefKeyword
-                                                )
-                                            ),
-                                        Argument(
-                                                MemberAccessExpression(
-                                                    SyntaxKind.SimpleMemberAccessExpression,
-                                                    IdentifierName(
-                                                        "previousValue"
-                                                    ),
-                                                    IdentifierName(
-                                                        cSharpSyntaxNode.ToString()
-                                                    )
-                                                )
-                                            )
-                                            .WithRefKindKeyword(
-                                                Token(
-                                                    SyntaxKind.RefKeyword
-                                                )
-                                            )
-                                    }
-                                )
-                            )
-                        )
-                    )
-                );
-
-                duplicateValueFieldStatement.Add(
-                    IfStatement(
-                        PrefixUnaryExpression(
-                            SyntaxKind.LogicalNotExpression,
-                            InvocationExpression(
-                                IdentifierName(
-                                    "object.Equals"
-                                ),
-                                ArgumentList(
-                                    SeparatedList(
-                                        new[] {
-                                            Argument(
-                                                MemberAccessExpression(
-                                                    SyntaxKind.SimpleMemberAccessExpression,
-                                                    IdentifierName(
-                                                        "duplicatedValue"
-                                                    ),
-                                                    IdentifierName(
-                                                        cSharpSyntaxNode.ToString()
-                                                    )
-                                                )
-                                            ),
-                                            Argument(
-                                                MemberAccessExpression(
-                                                    SyntaxKind.SimpleMemberAccessExpression,
-                                                    IdentifierName(
-                                                        "value"
-                                                    ),
-                                                    IdentifierName(
-                                                        cSharpSyntaxNode.ToString()
-                                                    )
-                                                )
-                                            )
-                                        }
-                                    )
-                                )
-                            )
-                        ),
-                        Block(
-                            ExpressionStatement(
-                                InvocationExpression(
-                                    IdentifierName(
-                                        $"Unity.Netcode.NetworkVariableSerialization<{type}>.Duplicate"
-                                    ),
-                                    ArgumentList(
-                                        SeparatedList(
-                                            new List<ArgumentSyntax>() {
-                                                Argument(
-                                                        MemberAccessExpression(
-                                                            SyntaxKind.SimpleMemberAccessExpression,
-                                                            IdentifierName(
-                                                                "value"
-                                                            ),
-                                                            IdentifierName(
-                                                                cSharpSyntaxNode.ToString()
-                                                            )
-                                                        )
-                                                    ),
-                                                Argument(
-                                                        MemberAccessExpression(
-                                                            SyntaxKind.SimpleMemberAccessExpression,
-                                                            IdentifierName(
-                                                                "duplicatedValue"
-                                                            ),
-                                                            IdentifierName(
-                                                                cSharpSyntaxNode.ToString()
-                                                            )
-                                                        )
-                                                    )
-                                                    .WithRefKindKeyword(
-                                                        Token(
-                                                            SyntaxKind.RefKeyword
-                                                        )
-                                                    )
-                                            }
-                                        )
-                                    )
-                                )
-                            )
-                        )
-                    )
-                );
-            }
+            #region readField
 
             MethodDeclarationSyntax readField = MethodDeclaration(
                     IdentifierName(
@@ -775,11 +137,145 @@ namespace Til.Unity.Lombok {
                             )
                         )
                 )
-                .WithBody(
-                    Block(
-                        readFieldStatement
-                    )
+                .AddBodyStatements(
+                    isNotValueType
+                        ? new StatementSyntax[] {
+                            LocalDeclarationStatement(
+                                VariableDeclaration(
+                                    ParseTypeName(
+                                        "bool"
+                                    ),
+                                    SeparatedList(
+                                        new[] {
+                                            VariableDeclarator(
+                                                "isNull"
+                                            )
+                                        }
+                                    )
+                                )
+                            ),
+                            ExpressionStatement(
+                                InvocationExpression(
+                                    IdentifierName(
+                                        "Unity.Netcode.ByteUnpacker.ReadValuePacked"
+                                    ),
+                                    ArgumentList(
+                                        SeparatedList(
+                                            new[] {
+                                                Argument(
+                                                    IdentifierName(
+                                                        "reader"
+                                                    )
+                                                ),
+                                                Argument(
+                                                        IdentifierName(
+                                                            "isNull"
+                                                        )
+                                                    )
+                                                    .WithRefKindKeyword(
+                                                        Token(
+                                                            SyntaxKind.OutKeyword
+                                                        )
+                                                    )
+                                            }
+                                        )
+                                    )
+                                )
+                            ),
+                            IfStatement(
+                                IdentifierName(
+                                    "isNull"
+                                ),
+                                Block(
+                                    ExpressionStatement(
+                                        AssignmentExpression(
+                                            SyntaxKind.SimpleAssignmentExpression,
+                                            IdentifierName(
+                                                "value"
+                                            ),
+                                            IdentifierName(
+                                                "null!"
+                                            )
+                                        )
+                                    ),
+                                    ReturnStatement(
+                                    )
+                                )
+                            ),
+                            ExpressionStatement(
+                                AssignmentExpression(
+                                    SyntaxKind.SimpleAssignmentExpression,
+                                    IdentifierName(
+                                        "value"
+                                    ),
+                                    ObjectCreationExpression(
+                                            ParseTypeName(
+                                                contextTargetNode.Identifier.Text
+                                            )
+                                        )
+                                        .WithArgumentList(
+                                            ArgumentList()
+                                        )
+                                )
+                            )
+                        }
+                        : Array.Empty<StatementSyntax>()
+                )
+                .AddBodyStatements(
+                    fieldList.Select(
+                            cSharpSyntaxNode => {
+                                string type = cSharpSyntaxNode is VariableDeclaratorSyntax variableDeclaratorSyntax
+                                    ? ((VariableDeclarationSyntax)variableDeclaratorSyntax.Parent!).Type.ToString()
+                                    : ((PropertyDeclarationSyntax)cSharpSyntaxNode).Type.ToString();
+
+                                return (StatementSyntax)ExpressionStatement(
+                                    InvocationExpression(
+                                        MemberAccessExpression(
+                                            SyntaxKind.SimpleMemberAccessExpression,
+                                            IdentifierName(
+                                                $"Unity.Netcode.NetworkVariableSerialization<{type}>"
+                                            ),
+                                            IdentifierName(
+                                                "Read"
+                                            )
+                                        ),
+                                        ArgumentList(
+                                            SeparatedList(
+                                                new List<ArgumentSyntax>() {
+                                                    Argument(
+                                                        IdentifierName(
+                                                            "reader"
+                                                        )
+                                                    ),
+                                                    Argument(
+                                                            MemberAccessExpression(
+                                                                SyntaxKind.SimpleMemberAccessExpression,
+                                                                IdentifierName(
+                                                                    "value"
+                                                                ),
+                                                                IdentifierName(
+                                                                    cSharpSyntaxNode.ToString()
+                                                                )
+                                                            )
+                                                        )
+                                                        .WithRefKindKeyword(
+                                                            Token(
+                                                                SyntaxKind.RefKeyword
+                                                            )
+                                                        )
+                                                }
+                                            )
+                                        )
+                                    )
+                                );
+                            }
+                        )
+                        .ToArray()
                 );
+
+            #endregion
+
+            #region readDeltaField
 
             MethodDeclarationSyntax readDeltaField = MethodDeclaration(
                     IdentifierName(
@@ -798,7 +294,7 @@ namespace Til.Unity.Lombok {
                 .AddParameterListParameters(
                     Parameter(
                             Identifier(
-                                "readDelta"
+                                "reader"
                             )
                         )
                         .WithType(
@@ -824,11 +320,274 @@ namespace Til.Unity.Lombok {
                             )
                         )
                 )
-                .WithBody(
-                    Block(
-                        readDeltaFieldStatement
+                .AddBodyStatements(
+                    isNotValueType
+                        ? new StatementSyntax[] {
+                            LocalDeclarationStatement(
+                                VariableDeclaration(
+                                    ParseTypeName(
+                                        "bool"
+                                    ),
+                                    SeparatedList(
+                                        new[] {
+                                            VariableDeclarator(
+                                                "isNull"
+                                            )
+                                        }
+                                    )
+                                )
+                            ),
+                            ExpressionStatement(
+                                InvocationExpression(
+                                    IdentifierName(
+                                        "Unity.Netcode.ByteUnpacker.ReadValuePacked"
+                                    ),
+                                    ArgumentList(
+                                        SeparatedList(
+                                            new[] {
+                                                Argument(
+                                                    IdentifierName(
+                                                        "reader"
+                                                    )
+                                                ),
+                                                Argument(
+                                                        IdentifierName(
+                                                            "isNull"
+                                                        )
+                                                    )
+                                                    .WithRefKindKeyword(
+                                                        Token(
+                                                            SyntaxKind.OutKeyword
+                                                        )
+                                                    )
+                                            }
+                                        )
+                                    )
+                                )
+                            ),
+                            IfStatement(
+                                IdentifierName(
+                                    "isNull"
+                                ),
+                                Block(
+                                    ExpressionStatement(
+                                        AssignmentExpression(
+                                            SyntaxKind.SimpleAssignmentExpression,
+                                            IdentifierName(
+                                                "value"
+                                            ),
+                                            IdentifierName(
+                                                "null!"
+                                            )
+                                        )
+                                    ),
+                                    ReturnStatement(
+                                    )
+                                )
+                            ),
+                            IfStatement(
+                                BinaryExpression(
+                                    SyntaxKind.EqualsExpression,
+                                    IdentifierName(
+                                        "value"
+                                    ),
+                                    LiteralExpression(
+                                        SyntaxKind.NullLiteralExpression
+                                    )
+                                ),
+                                Block(
+                                    ExpressionStatement(
+                                        AssignmentExpression(
+                                            SyntaxKind.SimpleAssignmentExpression,
+                                            IdentifierName(
+                                                "value"
+                                            ),
+                                            ObjectCreationExpression(
+                                                    ParseTypeName(
+                                                        contextTargetNode.Identifier.Text
+                                                    )
+                                                )
+                                                .WithArgumentList(
+                                                    ArgumentList()
+                                                )
+                                        )
+                                    )
+                                )
+                            )
+                        }
+                        : Array.Empty<StatementSyntax>()
+                )
+                .AddBodyStatements(
+                    LocalDeclarationStatement(
+                        VariableDeclaration(
+                            PredefinedType(
+                                Token(
+                                    SyntaxKind.IntKeyword
+                                )
+                            ),
+                            SeparatedList(
+                                new[] {
+                                    VariableDeclarator(
+                                        Identifier(
+                                            "tag"
+                                        )
+                                    )
+                                }
+                            )
+                        )
+                    ),
+                    ExpressionStatement(
+                        InvocationExpression(
+                            IdentifierName(
+                                "Unity.Netcode.ByteUnpacker.ReadValuePacked"
+                            ),
+                            ArgumentList(
+                                SeparatedList(
+                                    new[] {
+                                        Argument(
+                                            IdentifierName(
+                                                "reader"
+                                            )
+                                        ),
+                                        Argument(
+                                                IdentifierName(
+                                                    "tag"
+                                                )
+                                            )
+                                            .WithRefKindKeyword(
+                                                Token(
+                                                    SyntaxKind.OutKeyword
+                                                )
+                                            )
+                                    }
+                                )
+                            )
+                        )
                     )
+                )
+                .AddBodyStatements(
+                    fieldList.Select(
+                            (cSharpSyntaxNode, id) => {
+                                string type = cSharpSyntaxNode is VariableDeclaratorSyntax variableDeclaratorSyntax
+                                    ? ((VariableDeclarationSyntax)variableDeclaratorSyntax.Parent!).Type.ToString()
+                                    : ((PropertyDeclarationSyntax)cSharpSyntaxNode).Type.ToString();
+
+                                return (StatementSyntax)IfStatement(
+                                    BinaryExpression(
+                                        SyntaxKind.NotEqualsExpression,
+                                        ParenthesizedExpression(
+                                            BinaryExpression(
+                                                SyntaxKind.BitwiseAndExpression,
+                                                IdentifierName("tag"),
+                                                ParenthesizedExpression(
+                                                    BinaryExpression(
+                                                        SyntaxKind.LeftShiftExpression,
+                                                        LiteralExpression(
+                                                            SyntaxKind.NumericLiteralExpression,
+                                                            Literal(1)
+                                                        ),
+                                                        IdentifierName(id.ToString())
+                                                    )
+                                                )
+                                            )
+                                        ),
+                                        LiteralExpression(
+                                            SyntaxKind.NumericLiteralExpression,
+                                            Literal(0)
+                                        )
+                                    ),
+                                    Block(
+                                        ExpressionStatement(
+                                            InvocationExpression(
+                                                MemberAccessExpression(
+                                                    SyntaxKind.SimpleMemberAccessExpression,
+                                                    IdentifierName(
+                                                        $"Unity.Netcode.NetworkVariableSerialization<{type}>"
+                                                    ),
+                                                    IdentifierName(
+                                                        "ReadDelta"
+                                                    )
+                                                ),
+                                                ArgumentList(
+                                                    SeparatedList(
+                                                        new List<ArgumentSyntax>() {
+                                                            Argument(
+                                                                IdentifierName(
+                                                                    "reader"
+                                                                )
+                                                            ),
+                                                            Argument(
+                                                                    MemberAccessExpression(
+                                                                        SyntaxKind.SimpleMemberAccessExpression,
+                                                                        IdentifierName(
+                                                                            "value"
+                                                                        ),
+                                                                        IdentifierName(
+                                                                            cSharpSyntaxNode.ToString()
+                                                                        )
+                                                                    )
+                                                                )
+                                                                .WithRefKindKeyword(
+                                                                    Token(
+                                                                        SyntaxKind.RefKeyword
+                                                                    )
+                                                                )
+                                                        }
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    )
+                                );
+
+                                /*return (StatementSyntax)ExpressionStatement(
+                                    InvocationExpression(
+                                        MemberAccessExpression(
+                                            SyntaxKind.SimpleMemberAccessExpression,
+                                            IdentifierName(
+                                                $"Unity.Netcode.NetworkVariableSerialization<{type}>"
+                                            ),
+                                            IdentifierName(
+                                                "ReadDelta"
+                                            )
+                                        ),
+                                        ArgumentList(
+                                            SeparatedList(
+                                                new List<ArgumentSyntax>() {
+                                                    Argument(
+                                                        IdentifierName(
+                                                            "reader"
+                                                        )
+                                                    ),
+                                                    Argument(
+                                                            MemberAccessExpression(
+                                                                SyntaxKind.SimpleMemberAccessExpression,
+                                                                IdentifierName(
+                                                                    "value"
+                                                                ),
+                                                                IdentifierName(
+                                                                    cSharpSyntaxNode.ToString()
+                                                                )
+                                                            )
+                                                        )
+                                                        .WithRefKindKeyword(
+                                                            Token(
+                                                                SyntaxKind.RefKeyword
+                                                            )
+                                                        )
+                                                }
+                                            )
+                                        )
+                                    )
+                                );*/
+                            }
+                        )
+                        .ToArray()
                 );
+
+            #endregion
+
+            #region writeField
 
             MethodDeclarationSyntax writeField = MethodDeclaration(
                     IdentifierName(
@@ -852,7 +611,7 @@ namespace Til.Unity.Lombok {
                         )
                         .WithType(
                             IdentifierName(
-                                "Unity.Netcode.FastBufferReader"
+                                "Unity.Netcode.FastBufferWriter"
                             )
                         ),
                     Parameter(
@@ -873,11 +632,130 @@ namespace Til.Unity.Lombok {
                             )
                         )
                 )
-                .WithBody(
-                    Block(
-                        writeFieldStatement
-                    )
+                .AddBodyStatements(
+                    isNotValueType
+                        ? new StatementSyntax[] {
+                            IfStatement(
+                                BinaryExpression(
+                                    SyntaxKind.EqualsExpression,
+                                    IdentifierName(
+                                        "value"
+                                    ),
+                                    LiteralExpression(
+                                        SyntaxKind.NullLiteralExpression
+                                    )
+                                ),
+                                Block(
+                                    ExpressionStatement(
+                                        InvocationExpression(
+                                            IdentifierName(
+                                                "Unity.Netcode.BytePacker.WriteValuePacked"
+                                            ),
+                                            ArgumentList(
+                                                SeparatedList(
+                                                    new[] {
+                                                        Argument(
+                                                            IdentifierName(
+                                                                "writer"
+                                                            )
+                                                        ),
+                                                        Argument(
+                                                            IdentifierName(
+                                                                "true"
+                                                            )
+                                                        ),
+                                                    }
+                                                )
+                                            )
+                                        )
+                                    ),
+                                    ReturnStatement()
+                                )
+                            ),
+                            ExpressionStatement(
+                                InvocationExpression(
+                                    IdentifierName(
+                                        "Unity.Netcode.BytePacker.WriteValuePacked"
+                                    ),
+                                    ArgumentList(
+                                        SeparatedList(
+                                            new[] {
+                                                Argument(
+                                                    IdentifierName(
+                                                        "writer"
+                                                    )
+                                                ),
+                                                Argument(
+                                                    IdentifierName(
+                                                        "false"
+                                                    )
+                                                ),
+                                            }
+                                        )
+                                    )
+                                )
+                            )
+                        }
+                        : Array.Empty<StatementSyntax>()
+                )
+                .AddBodyStatements(
+                )
+                .AddBodyStatements(
+                    fieldList.Select(
+                            cSharpSyntaxNode => {
+                                string type = cSharpSyntaxNode is VariableDeclaratorSyntax variableDeclaratorSyntax
+                                    ? ((VariableDeclarationSyntax)variableDeclaratorSyntax.Parent!).Type.ToString()
+                                    : ((PropertyDeclarationSyntax)cSharpSyntaxNode).Type.ToString();
+
+                                return (StatementSyntax)ExpressionStatement(
+                                        InvocationExpression(
+                                            MemberAccessExpression(
+                                                SyntaxKind.SimpleMemberAccessExpression,
+                                                IdentifierName(
+                                                    $"Unity.Netcode.NetworkVariableSerialization<{type}>"
+                                                ),
+                                                IdentifierName(
+                                                    "Write"
+                                                )
+                                            ),
+                                            ArgumentList(
+                                                SeparatedList(
+                                                    new List<ArgumentSyntax>() {
+                                                        Argument(
+                                                            IdentifierName(
+                                                                "writer"
+                                                            )
+                                                        ),
+                                                        Argument(
+                                                                MemberAccessExpression(
+                                                                    SyntaxKind.SimpleMemberAccessExpression,
+                                                                    IdentifierName(
+                                                                        "value"
+                                                                    ),
+                                                                    IdentifierName(
+                                                                        cSharpSyntaxNode.ToString()
+                                                                    )
+                                                                )
+                                                            )
+                                                            .WithRefKindKeyword(
+                                                                Token(
+                                                                    SyntaxKind.RefKeyword
+                                                                )
+                                                            )
+                                                    }
+                                                )
+                                            )
+                                        )
+                                    )
+                                    ;
+                            }
+                        )
+                        .ToArray()
                 );
+
+            #endregion
+
+            #region writeDeltaField
 
             MethodDeclarationSyntax writeDeltaField = MethodDeclaration(
                     IdentifierName(
@@ -901,7 +779,7 @@ namespace Til.Unity.Lombok {
                         )
                         .WithType(
                             IdentifierName(
-                                "Unity.Netcode.FastBufferReader"
+                                "Unity.Netcode.FastBufferWriter"
                             )
                         ),
                     Parameter(
@@ -939,11 +817,289 @@ namespace Til.Unity.Lombok {
                             )
                         )
                 )
-                .WithBody(
-                    Block(
-                        writeDeltaFieldStatement
+                .AddBodyStatements(
+                    isNotValueType
+                        ? new StatementSyntax[] {
+                            IfStatement(
+                                BinaryExpression(
+                                    SyntaxKind.EqualsExpression,
+                                    IdentifierName(
+                                        "value"
+                                    ),
+                                    LiteralExpression(
+                                        SyntaxKind.NullLiteralExpression
+                                    )
+                                ),
+                                Block(
+                                    ExpressionStatement(
+                                        InvocationExpression(
+                                            IdentifierName(
+                                                "Unity.Netcode.BytePacker.WriteValuePacked"
+                                            ),
+                                            ArgumentList(
+                                                SeparatedList(
+                                                    new[] {
+                                                        Argument(
+                                                            IdentifierName(
+                                                                "writer"
+                                                            )
+                                                        ),
+                                                        Argument(
+                                                            IdentifierName(
+                                                                "true"
+                                                            )
+                                                        ),
+                                                    }
+                                                )
+                                            )
+                                        )
+                                    ),
+                                    ReturnStatement()
+                                )
+                            ),
+                            ExpressionStatement(
+                                InvocationExpression(
+                                    IdentifierName(
+                                        "Unity.Netcode.BytePacker.WriteValuePacked"
+                                    ),
+                                    ArgumentList(
+                                        SeparatedList(
+                                            new[] {
+                                                Argument(
+                                                    IdentifierName(
+                                                        "writer"
+                                                    )
+                                                ),
+                                                Argument(
+                                                    IdentifierName(
+                                                        "false"
+                                                    )
+                                                ),
+                                            }
+                                        )
+                                    )
+                                )
+                            )
+                        }
+                        : Array.Empty<StatementSyntax>()
+                )
+                .AddBodyStatements(
+                    LocalDeclarationStatement(
+                        VariableDeclaration(
+                            PredefinedType(
+                                Token(
+                                    SyntaxKind.IntKeyword
+                                )
+                            ),
+                            SeparatedList(
+                                new[] {
+                                    VariableDeclarator(
+                                        Identifier(
+                                            "tag"
+                                        ),
+                                        null,
+                                        EqualsValueClause(
+                                            LiteralExpression(
+                                                SyntaxKind.NumericLiteralExpression,
+                                                Literal(
+                                                    0
+                                                )
+                                            )
+                                        )
+                                    )
+                                }
+                            )
+                        )
                     )
+                )
+                .AddBodyStatements(
+                    fieldList.Select(
+                            (cSharpSyntaxNode, i) => {
+                                string type = cSharpSyntaxNode is VariableDeclaratorSyntax variableDeclaratorSyntax
+                                    ? ((VariableDeclarationSyntax)variableDeclaratorSyntax.Parent!).Type.ToString()
+                                    : ((PropertyDeclarationSyntax)cSharpSyntaxNode).Type.ToString();
+
+                                return (StatementSyntax)IfStatement(
+                                    PrefixUnaryExpression(
+                                        SyntaxKind.LogicalNotExpression,
+                                        InvocationExpression(
+                                            IdentifierName(
+                                                "object.Equals"
+                                            ),
+                                            ArgumentList(
+                                                SeparatedList(
+                                                    new[] {
+                                                        Argument(
+                                                            MemberAccessExpression(
+                                                                SyntaxKind.SimpleMemberAccessExpression,
+                                                                IdentifierName(
+                                                                    "previousValue"
+                                                                ),
+                                                                IdentifierName(
+                                                                    cSharpSyntaxNode.ToString()
+                                                                )
+                                                            )
+                                                        ),
+                                                        Argument(
+                                                            MemberAccessExpression(
+                                                                SyntaxKind.SimpleMemberAccessExpression,
+                                                                IdentifierName(
+                                                                    "value"
+                                                                ),
+                                                                IdentifierName(
+                                                                    cSharpSyntaxNode.ToString()
+                                                                )
+                                                            )
+                                                        )
+                                                    }
+                                                )
+                                            )
+                                        )
+                                    ),
+                                    Block(
+                                        ExpressionStatement(
+                                            AssignmentExpression(
+                                                SyntaxKind.SimpleAssignmentExpression,
+                                                IdentifierName("tag"),
+                                                BinaryExpression(
+                                                    SyntaxKind.BitwiseOrExpression,
+                                                    IdentifierName("tag"),
+                                                    ParenthesizedExpression(
+                                                        BinaryExpression(
+                                                            SyntaxKind.LeftShiftExpression,
+                                                            LiteralExpression(
+                                                                SyntaxKind.NumericLiteralExpression,
+                                                                Literal(1)
+                                                            ),
+                                                            IdentifierName(i.ToString())
+                                                        )
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    )
+                                );
+                            }
+                        )
+                        .ToArray()
+                )
+                .AddBodyStatements(
+                    ExpressionStatement(
+                        InvocationExpression(
+                            IdentifierName(
+                                "Unity.Netcode.BytePacker.WriteValuePacked"
+                            ),
+                            ArgumentList(
+                                SeparatedList(
+                                    new[] {
+                                        Argument(
+                                            IdentifierName(
+                                                "writer"
+                                            )
+                                        ),
+                                        Argument(
+                                            IdentifierName(
+                                                "tag"
+                                            )
+                                        ),
+                                    }
+                                )
+                            )
+                        )
+                    )
+                )
+                .AddBodyStatements(
+                    fieldList.Select(
+                            (cSharpSyntaxNode, id) => {
+                                string type = cSharpSyntaxNode is VariableDeclaratorSyntax variableDeclaratorSyntax
+                                    ? ((VariableDeclarationSyntax)variableDeclaratorSyntax.Parent!).Type.ToString()
+                                    : ((PropertyDeclarationSyntax)cSharpSyntaxNode).Type.ToString();
+
+                                return (StatementSyntax)IfStatement(
+                                    BinaryExpression(
+                                        SyntaxKind.NotEqualsExpression,
+                                        ParenthesizedExpression(
+                                            BinaryExpression(
+                                                SyntaxKind.BitwiseAndExpression,
+                                                IdentifierName("tag"),
+                                                ParenthesizedExpression(
+                                                    BinaryExpression(
+                                                        SyntaxKind.LeftShiftExpression,
+                                                        LiteralExpression(
+                                                            SyntaxKind.NumericLiteralExpression,
+                                                            Literal(1)
+                                                        ),
+                                                        IdentifierName(id.ToString())
+                                                    )
+                                                )
+                                            )
+                                        ),
+                                        LiteralExpression(
+                                            SyntaxKind.NumericLiteralExpression,
+                                            Literal(0)
+                                        )
+                                    ),
+                                    Block(
+                                        ExpressionStatement(
+                                            InvocationExpression(
+                                                IdentifierName(
+                                                    $"Unity.Netcode.NetworkVariableSerialization<{type}>.WriteDelta"
+                                                ),
+                                                ArgumentList(
+                                                    SeparatedList(
+                                                        new List<ArgumentSyntax>() {
+                                                            Argument(
+                                                                IdentifierName(
+                                                                    "writer"
+                                                                )
+                                                            ),
+                                                            Argument(
+                                                                    MemberAccessExpression(
+                                                                        SyntaxKind.SimpleMemberAccessExpression,
+                                                                        IdentifierName(
+                                                                            "value"
+                                                                        ),
+                                                                        IdentifierName(
+                                                                            cSharpSyntaxNode.ToString()
+                                                                        )
+                                                                    )
+                                                                )
+                                                                .WithRefKindKeyword(
+                                                                    Token(
+                                                                        SyntaxKind.RefKeyword
+                                                                    )
+                                                                ),
+                                                            Argument(
+                                                                    MemberAccessExpression(
+                                                                        SyntaxKind.SimpleMemberAccessExpression,
+                                                                        IdentifierName(
+                                                                            "previousValue"
+                                                                        ),
+                                                                        IdentifierName(
+                                                                            cSharpSyntaxNode.ToString()
+                                                                        )
+                                                                    )
+                                                                )
+                                                                .WithRefKindKeyword(
+                                                                    Token(
+                                                                        SyntaxKind.RefKeyword
+                                                                    )
+                                                                )
+                                                        }
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    )
+                                );
+                            }
+                        )
+                        .ToArray()
                 );
+
+            #endregion
+
+            #region duplicateValue
 
             MethodDeclarationSyntax duplicateValue = MethodDeclaration(
                     IdentifierName(
@@ -995,11 +1151,160 @@ namespace Til.Unity.Lombok {
                             )
                         )
                 )
-                .WithBody(
-                    Block(
-                        duplicateValueFieldStatement
-                    )
+                .AddBodyStatements(
+                    isNotValueType
+                        ? new StatementSyntax[] {
+                            IfStatement(
+                                BinaryExpression(
+                                    SyntaxKind.EqualsExpression,
+                                    IdentifierName(
+                                        "value"
+                                    ),
+                                    LiteralExpression(
+                                        SyntaxKind.NullLiteralExpression
+                                    )
+                                ),
+                                Block(
+                                    ExpressionStatement(
+                                        AssignmentExpression(
+                                            SyntaxKind.SimpleAssignmentExpression,
+                                            IdentifierName(
+                                                "duplicatedValue"
+                                            ),
+                                            IdentifierName(
+                                                "null!"
+                                            )
+                                        )
+                                    ),
+                                    ReturnStatement()
+                                )
+                            ),
+                            IfStatement(
+                                BinaryExpression(
+                                    SyntaxKind.EqualsExpression,
+                                    IdentifierName(
+                                        "duplicatedValue"
+                                    ),
+                                    LiteralExpression(
+                                        SyntaxKind.NullLiteralExpression
+                                    )
+                                ),
+                                Block(
+                                    ExpressionStatement(
+                                        AssignmentExpression(
+                                            SyntaxKind.SimpleAssignmentExpression,
+                                            IdentifierName(
+                                                "duplicatedValue"
+                                            ),
+                                            ObjectCreationExpression(
+                                                    ParseTypeName(
+                                                        contextTargetNode.Identifier.Text
+                                                    )
+                                                )
+                                                .WithArgumentList(
+                                                    ArgumentList()
+                                                )
+                                        )
+                                    )
+                                )
+                            )
+                        }
+                        : Array.Empty<StatementSyntax>()
+                )
+                .AddBodyStatements(
+                    fieldList.Select(
+                            cSharpSyntaxNode => {
+                                string type = cSharpSyntaxNode is VariableDeclaratorSyntax variableDeclaratorSyntax
+                                    ? ((VariableDeclarationSyntax)variableDeclaratorSyntax.Parent!).Type.ToString()
+                                    : ((PropertyDeclarationSyntax)cSharpSyntaxNode).Type.ToString();
+
+                                return (StatementSyntax)IfStatement(
+                                        PrefixUnaryExpression(
+                                            SyntaxKind.LogicalNotExpression,
+                                            InvocationExpression(
+                                                IdentifierName(
+                                                    "object.Equals"
+                                                ),
+                                                ArgumentList(
+                                                    SeparatedList(
+                                                        new[] {
+                                                            Argument(
+                                                                MemberAccessExpression(
+                                                                    SyntaxKind.SimpleMemberAccessExpression,
+                                                                    IdentifierName(
+                                                                        "duplicatedValue"
+                                                                    ),
+                                                                    IdentifierName(
+                                                                        cSharpSyntaxNode.ToString()
+                                                                    )
+                                                                )
+                                                            ),
+                                                            Argument(
+                                                                MemberAccessExpression(
+                                                                    SyntaxKind.SimpleMemberAccessExpression,
+                                                                    IdentifierName(
+                                                                        "value"
+                                                                    ),
+                                                                    IdentifierName(
+                                                                        cSharpSyntaxNode.ToString()
+                                                                    )
+                                                                )
+                                                            )
+                                                        }
+                                                    )
+                                                )
+                                            )
+                                        ),
+                                        Block(
+                                            ExpressionStatement(
+                                                InvocationExpression(
+                                                    IdentifierName(
+                                                        $"Unity.Netcode.NetworkVariableSerialization<{type}>.Duplicate"
+                                                    ),
+                                                    ArgumentList(
+                                                        SeparatedList(
+                                                            new List<ArgumentSyntax>() {
+                                                                Argument(
+                                                                    MemberAccessExpression(
+                                                                        SyntaxKind.SimpleMemberAccessExpression,
+                                                                        IdentifierName(
+                                                                            "value"
+                                                                        ),
+                                                                        IdentifierName(
+                                                                            cSharpSyntaxNode.ToString()
+                                                                        )
+                                                                    )
+                                                                ),
+                                                                Argument(
+                                                                        MemberAccessExpression(
+                                                                            SyntaxKind.SimpleMemberAccessExpression,
+                                                                            IdentifierName(
+                                                                                "duplicatedValue"
+                                                                            ),
+                                                                            IdentifierName(
+                                                                                cSharpSyntaxNode.ToString()
+                                                                            )
+                                                                        )
+                                                                    )
+                                                                    .WithRefKindKeyword(
+                                                                        Token(
+                                                                            SyntaxKind.RefKeyword
+                                                                        )
+                                                                    )
+                                                            }
+                                                        )
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    )
+                                    ;
+                            }
+                        )
+                        .ToArray()
                 );
+
+            #endregion
 
             return new GeneratorResult(
                 contextTargetNode.GetHintName(
@@ -1204,72 +1509,6 @@ namespace Til.Unity.Lombok {
                                                                         )
                                                                     )
                                                                 )
-                                                                /*,
-                                                                ExpressionStatement(
-                                                                    AssignmentExpression(
-                                                                        SyntaxKind.SimpleAssignmentExpression,
-                                                                        MemberAccessExpression(
-                                                                            SyntaxKind.SimpleMemberAccessExpression,
-                                                                            ParseTypeName(
-                                                                                $"Unity.Netcode.UserNetworkVariableSerialization<{contextTargetNode.Identifier.Text}>"
-                                                                            ),
-                                                                            IdentifierName(
-                                                                                "DuplicateValue"
-                                                                            )
-                                                                        ),
-                                                                        ParenthesizedLambdaExpression(
-                                                                            ParameterList(
-                                                                                SeparatedList(
-                                                                                    new[] {
-                                                                                        Parameter(
-                                                                                                Identifier(
-                                                                                                    "value"
-                                                                                                )
-                                                                                            )
-                                                                                            .WithType(
-                                                                                                IdentifierName(
-                                                                                                    contextTargetNode.Identifier.Text
-                                                                                                )
-                                                                                            )
-                                                                                            .WithModifiers(
-                                                                                                TokenList(
-                                                                                                    Token(
-                                                                                                        SyntaxKind.InKeyword
-                                                                                                    )
-                                                                                                )
-                                                                                            ),
-                                                                                        Parameter(
-                                                                                                Identifier(
-                                                                                                    "duplicatedValue"
-                                                                                                )
-                                                                                            )
-                                                                                            .WithType(
-                                                                                                IdentifierName(
-                                                                                                    contextTargetNode.Identifier.Text
-                                                                                                )
-                                                                                            )
-                                                                                            .WithModifiers(
-                                                                                                TokenList(
-                                                                                                    Token(
-                                                                                                        SyntaxKind.RefKeyword
-                                                                                                    )
-                                                                                                )
-                                                                                            )
-                                                                                    }
-                                                                                )
-                                                                            ),
-                                                                            AssignmentExpression(
-                                                                                SyntaxKind.SimpleAssignmentExpression,
-                                                                                IdentifierName(
-                                                                                    "duplicatedValue"
-                                                                                ),
-                                                                                IdentifierName(
-                                                                                    "value"
-                                                                                )
-                                                                            )
-                                                                        )
-                                                                    )
-                                                                )*/
                                                             )
                                                         )
                                                 )
@@ -1283,4 +1522,5 @@ namespace Til.Unity.Lombok {
             );
         }
     }
+
 }
