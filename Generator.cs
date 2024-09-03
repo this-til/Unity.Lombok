@@ -76,7 +76,7 @@ namespace Til.Unity.Lombok {
                         );
                         if (tryGetSpecifiedAttribute is not null) {
                             fieldList.Add(
-                                tryGetSpecifiedAttribute
+                                propertyDeclaration
                             );
                         }
                         break;
@@ -230,6 +230,10 @@ namespace Til.Unity.Lombok {
                                     ? ((VariableDeclarationSyntax)variableDeclaratorSyntax.Parent!).Type.ToString()
                                     : ((PropertyDeclarationSyntax)cSharpSyntaxNode).Type.ToString();
 
+                                string fieldName = cSharpSyntaxNode is VariableDeclaratorSyntax _variableDeclaratorSyntax
+                                    ? _variableDeclaratorSyntax.Identifier.Text
+                                    : ((PropertyDeclarationSyntax)cSharpSyntaxNode).Identifier.Text;
+
                                 return (StatementSyntax)ExpressionStatement(
                                     InvocationExpression(
                                         MemberAccessExpression(
@@ -256,7 +260,7 @@ namespace Til.Unity.Lombok {
                                                                     "value"
                                                                 ),
                                                                 IdentifierName(
-                                                                    cSharpSyntaxNode.ToString()
+                                                                    fieldName
                                                                 )
                                                             )
                                                         )
@@ -549,6 +553,9 @@ namespace Til.Unity.Lombok {
                                 string type = cSharpSyntaxNode is VariableDeclaratorSyntax variableDeclaratorSyntax
                                     ? ((VariableDeclarationSyntax)variableDeclaratorSyntax.Parent!).Type.ToString()
                                     : ((PropertyDeclarationSyntax)cSharpSyntaxNode).Type.ToString();
+                                string fieldName = cSharpSyntaxNode is VariableDeclaratorSyntax _variableDeclaratorSyntax
+                                    ? _variableDeclaratorSyntax.Identifier.Text
+                                    : ((PropertyDeclarationSyntax)cSharpSyntaxNode).Identifier.Text;
 
                                 return (StatementSyntax)IfStatement(
                                     BinaryExpression(
@@ -601,7 +608,7 @@ namespace Til.Unity.Lombok {
                                                                             "value"
                                                                         ),
                                                                         IdentifierName(
-                                                                            cSharpSyntaxNode.ToString()
+                                                                            fieldName
                                                                         )
                                                                     )
                                                                 )
@@ -785,6 +792,10 @@ namespace Til.Unity.Lombok {
                                     ? ((VariableDeclarationSyntax)variableDeclaratorSyntax.Parent!).Type.ToString()
                                     : ((PropertyDeclarationSyntax)cSharpSyntaxNode).Type.ToString();
 
+                                string fieldName = cSharpSyntaxNode is VariableDeclaratorSyntax _variableDeclaratorSyntax
+                                    ? _variableDeclaratorSyntax.Identifier.Text
+                                    : ((PropertyDeclarationSyntax)cSharpSyntaxNode).Identifier.Text;
+
                                 return (StatementSyntax)ExpressionStatement(
                                         InvocationExpression(
                                             MemberAccessExpression(
@@ -811,7 +822,7 @@ namespace Til.Unity.Lombok {
                                                                         "value"
                                                                     ),
                                                                     IdentifierName(
-                                                                        cSharpSyntaxNode.ToString()
+                                                                        fieldName
                                                                     )
                                                                 )
                                                             )
@@ -1084,6 +1095,9 @@ namespace Til.Unity.Lombok {
                                 string type = cSharpSyntaxNode is VariableDeclaratorSyntax variableDeclaratorSyntax
                                     ? ((VariableDeclarationSyntax)variableDeclaratorSyntax.Parent!).Type.ToString()
                                     : ((PropertyDeclarationSyntax)cSharpSyntaxNode).Type.ToString();
+                                string fieldName = cSharpSyntaxNode is VariableDeclaratorSyntax _variableDeclaratorSyntax
+                                    ? _variableDeclaratorSyntax.Identifier.Text
+                                    : ((PropertyDeclarationSyntax)cSharpSyntaxNode).Identifier.Text;
 
                                 return (StatementSyntax)IfStatement(
                                     PrefixUnaryExpression(
@@ -1102,7 +1116,7 @@ namespace Til.Unity.Lombok {
                                                                         "previousValue"
                                                                     ),
                                                                     IdentifierName(
-                                                                        cSharpSyntaxNode.ToString()
+                                                                        fieldName
                                                                     )
                                                                 )
                                                             )
@@ -1118,7 +1132,7 @@ namespace Til.Unity.Lombok {
                                                                         "value"
                                                                     ),
                                                                     IdentifierName(
-                                                                        cSharpSyntaxNode.ToString()
+                                                                        fieldName
                                                                     )
                                                                 )
                                                             )
@@ -1190,6 +1204,9 @@ namespace Til.Unity.Lombok {
                                 string type = cSharpSyntaxNode is VariableDeclaratorSyntax variableDeclaratorSyntax
                                     ? ((VariableDeclarationSyntax)variableDeclaratorSyntax.Parent!).Type.ToString()
                                     : ((PropertyDeclarationSyntax)cSharpSyntaxNode).Type.ToString();
+                                string fieldName = cSharpSyntaxNode is VariableDeclaratorSyntax _variableDeclaratorSyntax
+                                    ? _variableDeclaratorSyntax.Identifier.Text
+                                    : ((PropertyDeclarationSyntax)cSharpSyntaxNode).Identifier.Text;
 
                                 return (StatementSyntax)IfStatement(
                                     BinaryExpression(
@@ -1236,7 +1253,7 @@ namespace Til.Unity.Lombok {
                                                                             "value"
                                                                         ),
                                                                         IdentifierName(
-                                                                            cSharpSyntaxNode.ToString()
+                                                                            fieldName
                                                                         )
                                                                     )
                                                                 )
@@ -1252,7 +1269,7 @@ namespace Til.Unity.Lombok {
                                                                             "previousValue"
                                                                         ),
                                                                         IdentifierName(
-                                                                            cSharpSyntaxNode.ToString()
+                                                                            fieldName
                                                                         )
                                                                     )
                                                                 )
@@ -1393,6 +1410,9 @@ namespace Til.Unity.Lombok {
                                 string type = cSharpSyntaxNode is VariableDeclaratorSyntax variableDeclaratorSyntax
                                     ? ((VariableDeclarationSyntax)variableDeclaratorSyntax.Parent!).Type.ToString()
                                     : ((PropertyDeclarationSyntax)cSharpSyntaxNode).Type.ToString();
+                                string fieldName = cSharpSyntaxNode is VariableDeclaratorSyntax _variableDeclaratorSyntax
+                                    ? _variableDeclaratorSyntax.Identifier.Text
+                                    : ((PropertyDeclarationSyntax)cSharpSyntaxNode).Identifier.Text;
 
                                 return (StatementSyntax)IfStatement(
                                         PrefixUnaryExpression(
@@ -1411,7 +1431,7 @@ namespace Til.Unity.Lombok {
                                                                             "duplicatedValue"
                                                                         ),
                                                                         IdentifierName(
-                                                                            cSharpSyntaxNode.ToString()
+                                                                            fieldName
                                                                         )
                                                                     )
                                                                 )
@@ -1427,7 +1447,7 @@ namespace Til.Unity.Lombok {
                                                                             "value"
                                                                         ),
                                                                         IdentifierName(
-                                                                            cSharpSyntaxNode.ToString()
+                                                                            fieldName
                                                                         )
                                                                     )
                                                                 )
@@ -1457,7 +1477,7 @@ namespace Til.Unity.Lombok {
                                                                             "value"
                                                                         ),
                                                                         IdentifierName(
-                                                                            cSharpSyntaxNode.ToString()
+                                                                            fieldName
                                                                         )
                                                                     )
                                                                 ),
@@ -1468,7 +1488,7 @@ namespace Til.Unity.Lombok {
                                                                                 "duplicatedValue"
                                                                             ),
                                                                             IdentifierName(
-                                                                                cSharpSyntaxNode.ToString()
+                                                                                fieldName
                                                                             )
                                                                         )
                                                                     )
