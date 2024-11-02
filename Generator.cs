@@ -12,6 +12,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 using Til.Lombok;
+using Til.Lombok.Generator;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace Til.Unity.Lombok {
@@ -22,32 +23,36 @@ namespace Til.Unity.Lombok {
         private static readonly string AttributeName = typeof(ILombokAttribute).FullName!;
 
         public void Initialize(IncrementalGeneratorInitializationContext context) {
-            var sources = context.SyntaxProvider.ForAttributeWithMetadataName(
+            var sources = context.SyntaxProvider.ForAttributeWithMetadataName
+            (
                 AttributeName,
                 IsCandidate,
                 Transform
             );
-            context.AddSources(
+            context.AddSources
+            (
                 sources
             );
         }
 
-        private bool IsCandidate(
-            SyntaxNode node,
-            CancellationToken cancellationToken) => node is ClassDeclarationSyntax;
+        private bool IsCandidate(SyntaxNode node, CancellationToken cancellationToken) => node is ClassDeclarationSyntax classDeclarationSyntax && !classDeclarationSyntax.IsNestedType();
 
-        private GeneratorResult Transform(
+        private GeneratorResult Transform
+        (
             GeneratorAttributeSyntaxContext context,
-            CancellationToken cancellationToken) {
+            CancellationToken cancellationToken
+        ) {
             ClassDeclarationSyntax contextTargetNode = (ClassDeclarationSyntax)context.TargetNode;
 
             SemanticModel semanticModel = context.SemanticModel;
 
-            if (!contextTargetNode.TryValidateType(
+            if (!contextTargetNode.TryValidateType
+                (
                     out var @namespace,
                     out var diagnostic
                 )) {
-                return new GeneratorResult(
+                return new GeneratorResult
+                (
                     diagnostic
                 );
             }
@@ -58,12 +63,15 @@ namespace Til.Unity.Lombok {
                 switch (member) {
                     // 检查成员是否是字段或属性  
                     case FieldDeclarationSyntax fieldDeclaration: {
-                        AttributeSyntax? tryGetSpecifiedAttribute = fieldDeclaration.AttributeLists.tryGetSpecifiedAttribute(
-                            nameof(BufferFieldAttribute)
-                        );
+                        AttributeSyntax? tryGetSpecifiedAttribute = fieldDeclaration.AttributeLists.tryGetSpecifiedAttribute
+                            (
+                                nameof(BufferFieldAttribute)
+                            )
+                            .FirstOrDefault();
                         if (tryGetSpecifiedAttribute is not null) {
                             foreach (VariableDeclaratorSyntax variableDeclaratorSyntax in fieldDeclaration.Declaration.Variables) {
-                                fieldList.Add(
+                                fieldList.Add
+                                (
                                     variableDeclaratorSyntax
                                 );
                             }
@@ -71,11 +79,14 @@ namespace Til.Unity.Lombok {
                         break;
                     }
                     case PropertyDeclarationSyntax propertyDeclaration: {
-                        AttributeSyntax? tryGetSpecifiedAttribute = propertyDeclaration.AttributeLists.tryGetSpecifiedAttribute(
-                            nameof(BufferFieldAttribute)
-                        );
+                        AttributeSyntax? tryGetSpecifiedAttribute = propertyDeclaration.AttributeLists.tryGetSpecifiedAttribute
+                            (
+                                nameof(BufferFieldAttribute)
+                            )
+                            .FirstOrDefault();
                         if (tryGetSpecifiedAttribute is not null) {
-                            fieldList.Add(
+                            fieldList.Add
+                            (
                                 propertyDeclaration
                             );
                         }
@@ -88,7 +99,8 @@ namespace Til.Unity.Lombok {
                 return GeneratorResult.Empty;
             }
 
-            bool isNotValueType = !((semanticModel.GetSymbolInfo(
+            bool isNotValueType = !((semanticModel.GetSymbolInfo
+                                        (
                                             contextTargetNode
                                         )
                                         .Symbol as ITypeSymbol)?.IsValueType
@@ -96,86 +108,120 @@ namespace Til.Unity.Lombok {
 
             #region readField
 
-            MethodDeclarationSyntax readField = MethodDeclaration(
-                    IdentifierName(
+            MethodDeclarationSyntax readField = MethodDeclaration
+                (
+                    IdentifierName
+                    (
                         "void"
                     ),
                     "read"
                 )
-                .AddModifiers(
-                    Token(
+                .AddModifiers
+                (
+                    Token
+                    (
                         SyntaxKind.PublicKeyword
                     ),
-                    Token(
+                    Token
+                    (
                         SyntaxKind.StaticKeyword
                     )
                 )
-                .AddParameterListParameters(
-                    Parameter(
-                            Identifier(
+                .AddParameterListParameters
+                (
+                    Parameter
+                        (
+                            Identifier
+                            (
                                 "reader"
                             )
                         )
-                        .WithType(
-                            IdentifierName(
+                        .WithType
+                        (
+                            IdentifierName
+                            (
                                 "Unity.Netcode.FastBufferReader"
                             )
                         ),
-                    Parameter(
-                            Identifier(
+                    Parameter
+                        (
+                            Identifier
+                            (
                                 "value"
                             )
                         )
-                        .WithType(
-                            IdentifierName(
+                        .WithType
+                        (
+                            IdentifierName
+                            (
                                 contextTargetNode.Identifier.Text
                             )
                         )
-                        .WithModifiers(
-                            TokenList(
-                                Token(
+                        .WithModifiers
+                        (
+                            TokenList
+                            (
+                                Token
+                                (
                                     SyntaxKind.OutKeyword
                                 )
                             )
                         )
                 )
-                .AddBodyStatements(
+                .AddBodyStatements
+                (
                     isNotValueType
                         ? new StatementSyntax[] {
-                            LocalDeclarationStatement(
-                                VariableDeclaration(
-                                    ParseTypeName(
+                            LocalDeclarationStatement
+                            (
+                                VariableDeclaration
+                                (
+                                    ParseTypeName
+                                    (
                                         "bool"
                                     ),
-                                    SeparatedList(
+                                    SeparatedList
+                                    (
                                         new[] {
-                                            VariableDeclarator(
+                                            VariableDeclarator
+                                            (
                                                 "isNull"
                                             )
                                         }
                                     )
                                 )
                             ),
-                            ExpressionStatement(
-                                InvocationExpression(
-                                    IdentifierName(
+                            ExpressionStatement
+                            (
+                                InvocationExpression
+                                (
+                                    IdentifierName
+                                    (
                                         "Unity.Netcode.ByteUnpacker.ReadValuePacked"
                                     ),
-                                    ArgumentList(
-                                        SeparatedList(
+                                    ArgumentList
+                                    (
+                                        SeparatedList
+                                        (
                                             new[] {
-                                                Argument(
-                                                    IdentifierName(
+                                                Argument
+                                                (
+                                                    IdentifierName
+                                                    (
                                                         "reader"
                                                     )
                                                 ),
-                                                Argument(
-                                                        IdentifierName(
+                                                Argument
+                                                    (
+                                                        IdentifierName
+                                                        (
                                                             "isNull"
                                                         )
                                                     )
-                                                    .WithRefKindKeyword(
-                                                        Token(
+                                                    .WithRefKindKeyword
+                                                    (
+                                                        Token
+                                                        (
                                                             SyntaxKind.OutKeyword
                                                         )
                                                     )
@@ -184,18 +230,25 @@ namespace Til.Unity.Lombok {
                                     )
                                 )
                             ),
-                            IfStatement(
-                                IdentifierName(
+                            IfStatement
+                            (
+                                IdentifierName
+                                (
                                     "isNull"
                                 ),
-                                Block(
-                                    ExpressionStatement(
-                                        AssignmentExpression(
+                                Block
+                                (
+                                    ExpressionStatement
+                                    (
+                                        AssignmentExpression
+                                        (
                                             SyntaxKind.SimpleAssignmentExpression,
-                                            IdentifierName(
+                                            IdentifierName
+                                            (
                                                 "value"
                                             ),
-                                            IdentifierName(
+                                            IdentifierName
+                                            (
                                                 "null!"
                                             )
                                         )
@@ -204,18 +257,24 @@ namespace Til.Unity.Lombok {
                                     )
                                 )
                             ),
-                            ExpressionStatement(
-                                AssignmentExpression(
+                            ExpressionStatement
+                            (
+                                AssignmentExpression
+                                (
                                     SyntaxKind.SimpleAssignmentExpression,
-                                    IdentifierName(
+                                    IdentifierName
+                                    (
                                         "value"
                                     ),
-                                    ObjectCreationExpression(
-                                            ParseTypeName(
+                                    ObjectCreationExpression
+                                        (
+                                            ParseTypeName
+                                            (
                                                 contextTargetNode.Identifier.Text
                                             )
                                         )
-                                        .WithArgumentList(
+                                        .WithArgumentList
+                                        (
                                             ArgumentList()
                                         )
                                 )
@@ -223,8 +282,10 @@ namespace Til.Unity.Lombok {
                         }
                         : Array.Empty<StatementSyntax>()
                 )
-                .AddBodyStatements(
-                    fieldList.Select(
+                .AddBodyStatements
+                (
+                    fieldList.Select
+                        (
                             cSharpSyntaxNode => {
                                 string type = cSharpSyntaxNode is VariableDeclaratorSyntax variableDeclaratorSyntax
                                     ? ((VariableDeclarationSyntax)variableDeclaratorSyntax.Parent!).Type.ToString()
@@ -234,38 +295,53 @@ namespace Til.Unity.Lombok {
                                     ? _variableDeclaratorSyntax.Identifier.Text
                                     : ((PropertyDeclarationSyntax)cSharpSyntaxNode).Identifier.Text;
 
-                                return (StatementSyntax)ExpressionStatement(
-                                    InvocationExpression(
-                                        MemberAccessExpression(
+                                return (StatementSyntax)ExpressionStatement
+                                (
+                                    InvocationExpression
+                                    (
+                                        MemberAccessExpression
+                                        (
                                             SyntaxKind.SimpleMemberAccessExpression,
-                                            IdentifierName(
+                                            IdentifierName
+                                            (
                                                 $"Unity.Netcode.NetworkVariableSerialization<{type}>"
                                             ),
-                                            IdentifierName(
+                                            IdentifierName
+                                            (
                                                 "Read"
                                             )
                                         ),
-                                        ArgumentList(
-                                            SeparatedList(
+                                        ArgumentList
+                                        (
+                                            SeparatedList
+                                            (
                                                 new List<ArgumentSyntax>() {
-                                                    Argument(
-                                                        IdentifierName(
+                                                    Argument
+                                                    (
+                                                        IdentifierName
+                                                        (
                                                             "reader"
                                                         )
                                                     ),
-                                                    Argument(
-                                                            MemberAccessExpression(
+                                                    Argument
+                                                        (
+                                                            MemberAccessExpression
+                                                            (
                                                                 SyntaxKind.SimpleMemberAccessExpression,
-                                                                IdentifierName(
+                                                                IdentifierName
+                                                                (
                                                                     "value"
                                                                 ),
-                                                                IdentifierName(
+                                                                IdentifierName
+                                                                (
                                                                     fieldName
                                                                 )
                                                             )
                                                         )
-                                                        .WithRefKindKeyword(
-                                                            Token(
+                                                        .WithRefKindKeyword
+                                                        (
+                                                            Token
+                                                            (
                                                                 SyntaxKind.RefKeyword
                                                             )
                                                         )
@@ -283,86 +359,120 @@ namespace Til.Unity.Lombok {
 
             #region readDeltaField
 
-            MethodDeclarationSyntax readDeltaField = MethodDeclaration(
-                    IdentifierName(
+            MethodDeclarationSyntax readDeltaField = MethodDeclaration
+                (
+                    IdentifierName
+                    (
                         "void"
                     ),
                     "readDelta"
                 )
-                .AddModifiers(
-                    Token(
+                .AddModifiers
+                (
+                    Token
+                    (
                         SyntaxKind.PublicKeyword
                     ),
-                    Token(
+                    Token
+                    (
                         SyntaxKind.StaticKeyword
                     )
                 )
-                .AddParameterListParameters(
-                    Parameter(
-                            Identifier(
+                .AddParameterListParameters
+                (
+                    Parameter
+                        (
+                            Identifier
+                            (
                                 "reader"
                             )
                         )
-                        .WithType(
-                            IdentifierName(
+                        .WithType
+                        (
+                            IdentifierName
+                            (
                                 "Unity.Netcode.FastBufferReader"
                             )
                         ),
-                    Parameter(
-                            Identifier(
+                    Parameter
+                        (
+                            Identifier
+                            (
                                 "value"
                             )
                         )
-                        .WithType(
-                            IdentifierName(
+                        .WithType
+                        (
+                            IdentifierName
+                            (
                                 contextTargetNode.Identifier.Text
                             )
                         )
-                        .WithModifiers(
-                            TokenList(
-                                Token(
+                        .WithModifiers
+                        (
+                            TokenList
+                            (
+                                Token
+                                (
                                     SyntaxKind.RefKeyword
                                 )
                             )
                         )
                 )
-                .AddBodyStatements(
+                .AddBodyStatements
+                (
                     isNotValueType
                         ? new StatementSyntax[] {
-                            LocalDeclarationStatement(
-                                VariableDeclaration(
-                                    ParseTypeName(
+                            LocalDeclarationStatement
+                            (
+                                VariableDeclaration
+                                (
+                                    ParseTypeName
+                                    (
                                         "bool"
                                     ),
-                                    SeparatedList(
+                                    SeparatedList
+                                    (
                                         new[] {
-                                            VariableDeclarator(
+                                            VariableDeclarator
+                                            (
                                                 "useRead"
                                             )
                                         }
                                     )
                                 )
                             ),
-                            ExpressionStatement(
-                                InvocationExpression(
-                                    IdentifierName(
+                            ExpressionStatement
+                            (
+                                InvocationExpression
+                                (
+                                    IdentifierName
+                                    (
                                         "Unity.Netcode.ByteUnpacker.ReadValuePacked"
                                     ),
-                                    ArgumentList(
-                                        SeparatedList(
+                                    ArgumentList
+                                    (
+                                        SeparatedList
+                                        (
                                             new[] {
-                                                Argument(
-                                                    IdentifierName(
+                                                Argument
+                                                (
+                                                    IdentifierName
+                                                    (
                                                         "reader"
                                                     )
                                                 ),
-                                                Argument(
-                                                        IdentifierName(
+                                                Argument
+                                                    (
+                                                        IdentifierName
+                                                        (
                                                             "useRead"
                                                         )
                                                     )
-                                                    .WithRefKindKeyword(
-                                                        Token(
+                                                    .WithRefKindKeyword
+                                                    (
+                                                        Token
+                                                        (
                                                             SyntaxKind.OutKeyword
                                                         )
                                                     )
@@ -371,29 +481,42 @@ namespace Til.Unity.Lombok {
                                     )
                                 )
                             ),
-                            IfStatement(
+                            IfStatement
+                            (
                                 IdentifierName("useRead"),
-                                Block(
-                                    ExpressionStatement(
-                                        InvocationExpression(
-                                            IdentifierName(
+                                Block
+                                (
+                                    ExpressionStatement
+                                    (
+                                        InvocationExpression
+                                        (
+                                            IdentifierName
+                                            (
                                                 "read"
                                             ),
-                                            ArgumentList(
-                                                SeparatedList(
+                                            ArgumentList
+                                            (
+                                                SeparatedList
+                                                (
                                                     new[] {
-                                                        Argument(
-                                                            IdentifierName(
+                                                        Argument
+                                                        (
+                                                            IdentifierName
+                                                            (
                                                                 "reader"
                                                             )
                                                         ),
-                                                        Argument(
-                                                                IdentifierName(
+                                                        Argument
+                                                            (
+                                                                IdentifierName
+                                                                (
                                                                     "value"
                                                                 )
                                                             )
-                                                            .WithRefKindKeyword(
-                                                                Token(
+                                                            .WithRefKindKeyword
+                                                            (
+                                                                Token
+                                                                (
                                                                     SyntaxKind.OutKeyword
                                                                 )
                                                             ),
@@ -405,40 +528,56 @@ namespace Til.Unity.Lombok {
                                     ReturnStatement()
                                 )
                             ),
-                            LocalDeclarationStatement(
-                                VariableDeclaration(
-                                    ParseTypeName(
+                            LocalDeclarationStatement
+                            (
+                                VariableDeclaration
+                                (
+                                    ParseTypeName
+                                    (
                                         "bool"
                                     ),
-                                    SeparatedList(
+                                    SeparatedList
+                                    (
                                         new[] {
-                                            VariableDeclarator(
+                                            VariableDeclarator
+                                            (
                                                 "isNull"
                                             )
                                         }
                                     )
                                 )
                             ),
-                            ExpressionStatement(
-                                InvocationExpression(
-                                    IdentifierName(
+                            ExpressionStatement
+                            (
+                                InvocationExpression
+                                (
+                                    IdentifierName
+                                    (
                                         "Unity.Netcode.ByteUnpacker.ReadValuePacked"
                                     ),
-                                    ArgumentList(
-                                        SeparatedList(
+                                    ArgumentList
+                                    (
+                                        SeparatedList
+                                        (
                                             new[] {
-                                                Argument(
-                                                    IdentifierName(
+                                                Argument
+                                                (
+                                                    IdentifierName
+                                                    (
                                                         "reader"
                                                     )
                                                 ),
-                                                Argument(
-                                                        IdentifierName(
+                                                Argument
+                                                    (
+                                                        IdentifierName
+                                                        (
                                                             "isNull"
                                                         )
                                                     )
-                                                    .WithRefKindKeyword(
-                                                        Token(
+                                                    .WithRefKindKeyword
+                                                    (
+                                                        Token
+                                                        (
                                                             SyntaxKind.OutKeyword
                                                         )
                                                     )
@@ -447,18 +586,25 @@ namespace Til.Unity.Lombok {
                                     )
                                 )
                             ),
-                            IfStatement(
-                                IdentifierName(
+                            IfStatement
+                            (
+                                IdentifierName
+                                (
                                     "isNull"
                                 ),
-                                Block(
-                                    ExpressionStatement(
-                                        AssignmentExpression(
+                                Block
+                                (
+                                    ExpressionStatement
+                                    (
+                                        AssignmentExpression
+                                        (
                                             SyntaxKind.SimpleAssignmentExpression,
-                                            IdentifierName(
+                                            IdentifierName
+                                            (
                                                 "value"
                                             ),
-                                            IdentifierName(
+                                            IdentifierName
+                                            (
                                                 "null!"
                                             )
                                         )
@@ -467,29 +613,40 @@ namespace Til.Unity.Lombok {
                                     )
                                 )
                             ),
-                            IfStatement(
-                                BinaryExpression(
+                            IfStatement
+                            (
+                                BinaryExpression
+                                (
                                     SyntaxKind.EqualsExpression,
-                                    IdentifierName(
+                                    IdentifierName
+                                    (
                                         "value"
                                     ),
-                                    LiteralExpression(
+                                    LiteralExpression
+                                    (
                                         SyntaxKind.NullLiteralExpression
                                     )
                                 ),
-                                Block(
-                                    ExpressionStatement(
-                                        AssignmentExpression(
+                                Block
+                                (
+                                    ExpressionStatement
+                                    (
+                                        AssignmentExpression
+                                        (
                                             SyntaxKind.SimpleAssignmentExpression,
-                                            IdentifierName(
+                                            IdentifierName
+                                            (
                                                 "value"
                                             ),
-                                            ObjectCreationExpression(
-                                                    ParseTypeName(
+                                            ObjectCreationExpression
+                                                (
+                                                    ParseTypeName
+                                                    (
                                                         contextTargetNode.Identifier.Text
                                                     )
                                                 )
-                                                .WithArgumentList(
+                                                .WithArgumentList
+                                                (
                                                     ArgumentList()
                                                 )
                                         )
@@ -499,18 +656,26 @@ namespace Til.Unity.Lombok {
                         }
                         : Array.Empty<StatementSyntax>()
                 )
-                .AddBodyStatements(
-                    LocalDeclarationStatement(
-                        VariableDeclaration(
-                            PredefinedType(
-                                Token(
+                .AddBodyStatements
+                (
+                    LocalDeclarationStatement
+                    (
+                        VariableDeclaration
+                        (
+                            PredefinedType
+                            (
+                                Token
+                                (
                                     SyntaxKind.IntKeyword
                                 )
                             ),
-                            SeparatedList(
+                            SeparatedList
+                            (
                                 new[] {
-                                    VariableDeclarator(
-                                        Identifier(
+                                    VariableDeclarator
+                                    (
+                                        Identifier
+                                        (
                                             "tag"
                                         )
                                     )
@@ -518,26 +683,37 @@ namespace Til.Unity.Lombok {
                             )
                         )
                     ),
-                    ExpressionStatement(
-                        InvocationExpression(
-                            IdentifierName(
+                    ExpressionStatement
+                    (
+                        InvocationExpression
+                        (
+                            IdentifierName
+                            (
                                 "Unity.Netcode.ByteUnpacker.ReadValuePacked"
                             ),
-                            ArgumentList(
-                                SeparatedList(
+                            ArgumentList
+                            (
+                                SeparatedList
+                                (
                                     new[] {
-                                        Argument(
-                                            IdentifierName(
+                                        Argument
+                                        (
+                                            IdentifierName
+                                            (
                                                 "reader"
                                             )
                                         ),
-                                        Argument(
-                                                IdentifierName(
+                                        Argument
+                                            (
+                                                IdentifierName
+                                                (
                                                     "tag"
                                                 )
                                             )
-                                            .WithRefKindKeyword(
-                                                Token(
+                                            .WithRefKindKeyword
+                                            (
+                                                Token
+                                                (
                                                     SyntaxKind.OutKeyword
                                                 )
                                             )
@@ -547,8 +723,10 @@ namespace Til.Unity.Lombok {
                         )
                     )
                 )
-                .AddBodyStatements(
-                    fieldList.Select(
+                .AddBodyStatements
+                (
+                    fieldList.Select
+                        (
                             (cSharpSyntaxNode, id) => {
                                 string type = cSharpSyntaxNode is VariableDeclaratorSyntax variableDeclaratorSyntax
                                     ? ((VariableDeclarationSyntax)variableDeclaratorSyntax.Parent!).Type.ToString()
@@ -557,17 +735,24 @@ namespace Til.Unity.Lombok {
                                     ? _variableDeclaratorSyntax.Identifier.Text
                                     : ((PropertyDeclarationSyntax)cSharpSyntaxNode).Identifier.Text;
 
-                                return (StatementSyntax)IfStatement(
-                                    BinaryExpression(
+                                return (StatementSyntax)IfStatement
+                                (
+                                    BinaryExpression
+                                    (
                                         SyntaxKind.NotEqualsExpression,
-                                        ParenthesizedExpression(
-                                            BinaryExpression(
+                                        ParenthesizedExpression
+                                        (
+                                            BinaryExpression
+                                            (
                                                 SyntaxKind.BitwiseAndExpression,
                                                 IdentifierName("tag"),
-                                                ParenthesizedExpression(
-                                                    BinaryExpression(
+                                                ParenthesizedExpression
+                                                (
+                                                    BinaryExpression
+                                                    (
                                                         SyntaxKind.LeftShiftExpression,
-                                                        LiteralExpression(
+                                                        LiteralExpression
+                                                        (
                                                             SyntaxKind.NumericLiteralExpression,
                                                             Literal(1)
                                                         ),
@@ -576,44 +761,61 @@ namespace Til.Unity.Lombok {
                                                 )
                                             )
                                         ),
-                                        LiteralExpression(
+                                        LiteralExpression
+                                        (
                                             SyntaxKind.NumericLiteralExpression,
                                             Literal(0)
                                         )
                                     ),
-                                    Block(
-                                        ExpressionStatement(
-                                            InvocationExpression(
-                                                MemberAccessExpression(
+                                    Block
+                                    (
+                                        ExpressionStatement
+                                        (
+                                            InvocationExpression
+                                            (
+                                                MemberAccessExpression
+                                                (
                                                     SyntaxKind.SimpleMemberAccessExpression,
-                                                    IdentifierName(
+                                                    IdentifierName
+                                                    (
                                                         $"Unity.Netcode.NetworkVariableSerialization<{type}>"
                                                     ),
-                                                    IdentifierName(
+                                                    IdentifierName
+                                                    (
                                                         "ReadDelta"
                                                     )
                                                 ),
-                                                ArgumentList(
-                                                    SeparatedList(
+                                                ArgumentList
+                                                (
+                                                    SeparatedList
+                                                    (
                                                         new List<ArgumentSyntax>() {
-                                                            Argument(
-                                                                IdentifierName(
+                                                            Argument
+                                                            (
+                                                                IdentifierName
+                                                                (
                                                                     "reader"
                                                                 )
                                                             ),
-                                                            Argument(
-                                                                    MemberAccessExpression(
+                                                            Argument
+                                                                (
+                                                                    MemberAccessExpression
+                                                                    (
                                                                         SyntaxKind.SimpleMemberAccessExpression,
-                                                                        IdentifierName(
+                                                                        IdentifierName
+                                                                        (
                                                                             "value"
                                                                         ),
-                                                                        IdentifierName(
+                                                                        IdentifierName
+                                                                        (
                                                                             fieldName
                                                                         )
                                                                     )
                                                                 )
-                                                                .WithRefKindKeyword(
-                                                                    Token(
+                                                                .WithRefKindKeyword
+                                                                (
+                                                                    Token
+                                                                    (
                                                                         SyntaxKind.RefKeyword
                                                                     )
                                                                 )
@@ -674,78 +876,110 @@ namespace Til.Unity.Lombok {
 
             #region writeField
 
-            MethodDeclarationSyntax writeField = MethodDeclaration(
-                    IdentifierName(
+            MethodDeclarationSyntax writeField = MethodDeclaration
+                (
+                    IdentifierName
+                    (
                         "void"
                     ),
                     "write"
                 )
-                .AddModifiers(
-                    Token(
+                .AddModifiers
+                (
+                    Token
+                    (
                         SyntaxKind.PublicKeyword
                     ),
-                    Token(
+                    Token
+                    (
                         SyntaxKind.StaticKeyword
                     )
                 )
-                .AddParameterListParameters(
-                    Parameter(
-                            Identifier(
+                .AddParameterListParameters
+                (
+                    Parameter
+                        (
+                            Identifier
+                            (
                                 "writer"
                             )
                         )
-                        .WithType(
-                            IdentifierName(
+                        .WithType
+                        (
+                            IdentifierName
+                            (
                                 "Unity.Netcode.FastBufferWriter"
                             )
                         ),
-                    Parameter(
-                            Identifier(
+                    Parameter
+                        (
+                            Identifier
+                            (
                                 "value"
                             )
                         )
-                        .WithType(
-                            IdentifierName(
+                        .WithType
+                        (
+                            IdentifierName
+                            (
                                 contextTargetNode.Identifier.Text
                             )
                         )
-                        .WithModifiers(
-                            TokenList(
-                                Token(
+                        .WithModifiers
+                        (
+                            TokenList
+                            (
+                                Token
+                                (
                                     SyntaxKind.InKeyword
                                 )
                             )
                         )
                 )
-                .AddBodyStatements(
+                .AddBodyStatements
+                (
                     isNotValueType
                         ? new StatementSyntax[] {
-                            IfStatement(
-                                BinaryExpression(
+                            IfStatement
+                            (
+                                BinaryExpression
+                                (
                                     SyntaxKind.EqualsExpression,
-                                    IdentifierName(
+                                    IdentifierName
+                                    (
                                         "value"
                                     ),
-                                    LiteralExpression(
+                                    LiteralExpression
+                                    (
                                         SyntaxKind.NullLiteralExpression
                                     )
                                 ),
-                                Block(
-                                    ExpressionStatement(
-                                        InvocationExpression(
-                                            IdentifierName(
+                                Block
+                                (
+                                    ExpressionStatement
+                                    (
+                                        InvocationExpression
+                                        (
+                                            IdentifierName
+                                            (
                                                 "Unity.Netcode.BytePacker.WriteValuePacked"
                                             ),
-                                            ArgumentList(
-                                                SeparatedList(
+                                            ArgumentList
+                                            (
+                                                SeparatedList
+                                                (
                                                     new[] {
-                                                        Argument(
-                                                            IdentifierName(
+                                                        Argument
+                                                        (
+                                                            IdentifierName
+                                                            (
                                                                 "writer"
                                                             )
                                                         ),
-                                                        Argument(
-                                                            IdentifierName(
+                                                        Argument
+                                                        (
+                                                            IdentifierName
+                                                            (
                                                                 "true"
                                                             )
                                                         ),
@@ -757,21 +991,30 @@ namespace Til.Unity.Lombok {
                                     ReturnStatement()
                                 )
                             ),
-                            ExpressionStatement(
-                                InvocationExpression(
-                                    IdentifierName(
+                            ExpressionStatement
+                            (
+                                InvocationExpression
+                                (
+                                    IdentifierName
+                                    (
                                         "Unity.Netcode.BytePacker.WriteValuePacked"
                                     ),
-                                    ArgumentList(
-                                        SeparatedList(
+                                    ArgumentList
+                                    (
+                                        SeparatedList
+                                        (
                                             new[] {
-                                                Argument(
-                                                    IdentifierName(
+                                                Argument
+                                                (
+                                                    IdentifierName
+                                                    (
                                                         "writer"
                                                     )
                                                 ),
-                                                Argument(
-                                                    IdentifierName(
+                                                Argument
+                                                (
+                                                    IdentifierName
+                                                    (
                                                         "false"
                                                     )
                                                 ),
@@ -785,8 +1028,10 @@ namespace Til.Unity.Lombok {
                 )
                 .AddBodyStatements(
                 )
-                .AddBodyStatements(
-                    fieldList.Select(
+                .AddBodyStatements
+                (
+                    fieldList.Select
+                        (
                             cSharpSyntaxNode => {
                                 string type = cSharpSyntaxNode is VariableDeclaratorSyntax variableDeclaratorSyntax
                                     ? ((VariableDeclarationSyntax)variableDeclaratorSyntax.Parent!).Type.ToString()
@@ -796,38 +1041,53 @@ namespace Til.Unity.Lombok {
                                     ? _variableDeclaratorSyntax.Identifier.Text
                                     : ((PropertyDeclarationSyntax)cSharpSyntaxNode).Identifier.Text;
 
-                                return (StatementSyntax)ExpressionStatement(
-                                        InvocationExpression(
-                                            MemberAccessExpression(
+                                return (StatementSyntax)ExpressionStatement
+                                    (
+                                        InvocationExpression
+                                        (
+                                            MemberAccessExpression
+                                            (
                                                 SyntaxKind.SimpleMemberAccessExpression,
-                                                IdentifierName(
+                                                IdentifierName
+                                                (
                                                     $"Unity.Netcode.NetworkVariableSerialization<{type}>"
                                                 ),
-                                                IdentifierName(
+                                                IdentifierName
+                                                (
                                                     "Write"
                                                 )
                                             ),
-                                            ArgumentList(
-                                                SeparatedList(
+                                            ArgumentList
+                                            (
+                                                SeparatedList
+                                                (
                                                     new List<ArgumentSyntax>() {
-                                                        Argument(
-                                                            IdentifierName(
+                                                        Argument
+                                                        (
+                                                            IdentifierName
+                                                            (
                                                                 "writer"
                                                             )
                                                         ),
-                                                        Argument(
-                                                                MemberAccessExpression(
+                                                        Argument
+                                                            (
+                                                                MemberAccessExpression
+                                                                (
                                                                     SyntaxKind.SimpleMemberAccessExpression,
-                                                                    IdentifierName(
+                                                                    IdentifierName
+                                                                    (
                                                                         "value"
                                                                     ),
-                                                                    IdentifierName(
+                                                                    IdentifierName
+                                                                    (
                                                                         fieldName
                                                                     )
                                                                 )
                                                             )
-                                                            .WithRefKindKeyword(
-                                                                Token(
+                                                            .WithRefKindKeyword
+                                                            (
+                                                                Token
+                                                                (
                                                                     SyntaxKind.RefKeyword
                                                                 )
                                                             )
@@ -846,95 +1106,134 @@ namespace Til.Unity.Lombok {
 
             #region writeDeltaField
 
-            MethodDeclarationSyntax writeDeltaField = MethodDeclaration(
-                    IdentifierName(
+            MethodDeclarationSyntax writeDeltaField = MethodDeclaration
+                (
+                    IdentifierName
+                    (
                         "void"
                     ),
                     "writeDelta"
                 )
-                .AddModifiers(
-                    Token(
+                .AddModifiers
+                (
+                    Token
+                    (
                         SyntaxKind.PublicKeyword
                     ),
-                    Token(
+                    Token
+                    (
                         SyntaxKind.StaticKeyword
                     )
                 )
-                .AddParameterListParameters(
-                    Parameter(
-                            Identifier(
+                .AddParameterListParameters
+                (
+                    Parameter
+                        (
+                            Identifier
+                            (
                                 "writer"
                             )
                         )
-                        .WithType(
-                            IdentifierName(
+                        .WithType
+                        (
+                            IdentifierName
+                            (
                                 "Unity.Netcode.FastBufferWriter"
                             )
                         ),
-                    Parameter(
-                            Identifier(
+                    Parameter
+                        (
+                            Identifier
+                            (
                                 "value"
                             )
                         )
-                        .WithType(
-                            IdentifierName(
+                        .WithType
+                        (
+                            IdentifierName
+                            (
                                 contextTargetNode.Identifier.Text
                             )
                         )
-                        .WithModifiers(
-                            TokenList(
-                                Token(
+                        .WithModifiers
+                        (
+                            TokenList
+                            (
+                                Token
+                                (
                                     SyntaxKind.InKeyword
                                 )
                             )
                         ),
-                    Parameter(
-                            Identifier(
+                    Parameter
+                        (
+                            Identifier
+                            (
                                 "previousValue"
                             )
                         )
-                        .WithType(
-                            IdentifierName(
+                        .WithType
+                        (
+                            IdentifierName
+                            (
                                 contextTargetNode.Identifier.Text
                             )
                         )
-                        .WithModifiers(
-                            TokenList(
-                                Token(
+                        .WithModifiers
+                        (
+                            TokenList
+                            (
+                                Token
+                                (
                                     SyntaxKind.InKeyword
                                 )
                             )
                         )
                 )
-                .AddBodyStatements(
+                .AddBodyStatements
+                (
                     isNotValueType
                         ? new StatementSyntax[] {
-                            IfStatement(
-                                BinaryExpression(
+                            IfStatement
+                            (
+                                BinaryExpression
+                                (
                                     SyntaxKind.EqualsExpression,
-                                    IdentifierName(
+                                    IdentifierName
+                                    (
                                         "previousValue"
                                     ),
-                                    LiteralExpression(
+                                    LiteralExpression
+                                    (
                                         SyntaxKind.NullLiteralExpression
                                     )
                                 ),
-                                Block(
-                                    ExpressionStatement(
-                                        InvocationExpression(
-                                            IdentifierName(
+                                Block
+                                (
+                                    ExpressionStatement
+                                    (
+                                        InvocationExpression
+                                        (
+                                            IdentifierName
+                                            (
                                                 "Unity.Netcode.BytePacker.WriteValuePacked"
                                             ),
-                                            ArgumentList(
-                                                SeparatedList(
+                                            ArgumentList
+                                            (
+                                                SeparatedList
+                                                (
                                                     new[] {
-                                                        Argument(
-                                                            IdentifierName(
+                                                        Argument
+                                                        (
+                                                            IdentifierName
+                                                            (
                                                                 "writer"
                                                             )
                                                         ),
-                                                        Argument(
-                                                            IdentifierName(
+                                                        Argument
+                                                        (
+                                                            IdentifierName
+                                                            (
                                                                 "true"
                                                             )
                                                         ),
@@ -943,26 +1242,37 @@ namespace Til.Unity.Lombok {
                                             )
                                         )
                                     ),
-                                    ExpressionStatement(
-                                        InvocationExpression(
-                                            IdentifierName(
+                                    ExpressionStatement
+                                    (
+                                        InvocationExpression
+                                        (
+                                            IdentifierName
+                                            (
                                                 "write"
                                             ),
-                                            ArgumentList(
-                                                SeparatedList(
+                                            ArgumentList
+                                            (
+                                                SeparatedList
+                                                (
                                                     new[] {
-                                                        Argument(
-                                                            IdentifierName(
+                                                        Argument
+                                                        (
+                                                            IdentifierName
+                                                            (
                                                                 "writer"
                                                             )
                                                         ),
-                                                        Argument(
-                                                                IdentifierName(
+                                                        Argument
+                                                            (
+                                                                IdentifierName
+                                                                (
                                                                     "value"
                                                                 )
                                                             )
-                                                            .WithRefKindKeyword(
-                                                                Token(
+                                                            .WithRefKindKeyword
+                                                            (
+                                                                Token
+                                                                (
                                                                     SyntaxKind.InKeyword
                                                                 )
                                                             ),
@@ -974,21 +1284,30 @@ namespace Til.Unity.Lombok {
                                     ReturnStatement()
                                 )
                             ),
-                            ExpressionStatement(
-                                InvocationExpression(
-                                    IdentifierName(
+                            ExpressionStatement
+                            (
+                                InvocationExpression
+                                (
+                                    IdentifierName
+                                    (
                                         "Unity.Netcode.BytePacker.WriteValuePacked"
                                     ),
-                                    ArgumentList(
-                                        SeparatedList(
+                                    ArgumentList
+                                    (
+                                        SeparatedList
+                                        (
                                             new[] {
-                                                Argument(
-                                                    IdentifierName(
+                                                Argument
+                                                (
+                                                    IdentifierName
+                                                    (
                                                         "writer"
                                                     )
                                                 ),
-                                                Argument(
-                                                    IdentifierName(
+                                                Argument
+                                                (
+                                                    IdentifierName
+                                                    (
                                                         "false"
                                                     )
                                                 ),
@@ -997,32 +1316,46 @@ namespace Til.Unity.Lombok {
                                     )
                                 )
                             ),
-                            IfStatement(
-                                BinaryExpression(
+                            IfStatement
+                            (
+                                BinaryExpression
+                                (
                                     SyntaxKind.EqualsExpression,
-                                    IdentifierName(
+                                    IdentifierName
+                                    (
                                         "value"
                                     ),
-                                    LiteralExpression(
+                                    LiteralExpression
+                                    (
                                         SyntaxKind.NullLiteralExpression
                                     )
                                 ),
-                                Block(
-                                    ExpressionStatement(
-                                        InvocationExpression(
-                                            IdentifierName(
+                                Block
+                                (
+                                    ExpressionStatement
+                                    (
+                                        InvocationExpression
+                                        (
+                                            IdentifierName
+                                            (
                                                 "Unity.Netcode.BytePacker.WriteValuePacked"
                                             ),
-                                            ArgumentList(
-                                                SeparatedList(
+                                            ArgumentList
+                                            (
+                                                SeparatedList
+                                                (
                                                     new[] {
-                                                        Argument(
-                                                            IdentifierName(
+                                                        Argument
+                                                        (
+                                                            IdentifierName
+                                                            (
                                                                 "writer"
                                                             )
                                                         ),
-                                                        Argument(
-                                                            IdentifierName(
+                                                        Argument
+                                                        (
+                                                            IdentifierName
+                                                            (
                                                                 "true"
                                                             )
                                                         ),
@@ -1034,21 +1367,30 @@ namespace Til.Unity.Lombok {
                                     ReturnStatement()
                                 )
                             ),
-                            ExpressionStatement(
-                                InvocationExpression(
-                                    IdentifierName(
+                            ExpressionStatement
+                            (
+                                InvocationExpression
+                                (
+                                    IdentifierName
+                                    (
                                         "Unity.Netcode.BytePacker.WriteValuePacked"
                                     ),
-                                    ArgumentList(
-                                        SeparatedList(
+                                    ArgumentList
+                                    (
+                                        SeparatedList
+                                        (
                                             new[] {
-                                                Argument(
-                                                    IdentifierName(
+                                                Argument
+                                                (
+                                                    IdentifierName
+                                                    (
                                                         "writer"
                                                     )
                                                 ),
-                                                Argument(
-                                                    IdentifierName(
+                                                Argument
+                                                (
+                                                    IdentifierName
+                                                    (
                                                         "false"
                                                     )
                                                 ),
@@ -1060,25 +1402,36 @@ namespace Til.Unity.Lombok {
                         }
                         : Array.Empty<StatementSyntax>()
                 )
-                .AddBodyStatements(
-                    LocalDeclarationStatement(
-                        VariableDeclaration(
-                            PredefinedType(
-                                Token(
+                .AddBodyStatements
+                (
+                    LocalDeclarationStatement
+                    (
+                        VariableDeclaration
+                        (
+                            PredefinedType
+                            (
+                                Token
+                                (
                                     SyntaxKind.IntKeyword
                                 )
                             ),
-                            SeparatedList(
+                            SeparatedList
+                            (
                                 new[] {
-                                    VariableDeclarator(
-                                        Identifier(
+                                    VariableDeclarator
+                                    (
+                                        Identifier
+                                        (
                                             "tag"
                                         ),
                                         null,
-                                        EqualsValueClause(
-                                            LiteralExpression(
+                                        EqualsValueClause
+                                        (
+                                            LiteralExpression
+                                            (
                                                 SyntaxKind.NumericLiteralExpression,
-                                                Literal(
+                                                Literal
+                                                (
                                                     0
                                                 )
                                             )
@@ -1089,8 +1442,10 @@ namespace Til.Unity.Lombok {
                         )
                     )
                 )
-                .AddBodyStatements(
-                    fieldList.Select(
+                .AddBodyStatements
+                (
+                    fieldList.Select
+                        (
                             (cSharpSyntaxNode, i) => {
                                 string type = cSharpSyntaxNode is VariableDeclaratorSyntax variableDeclaratorSyntax
                                     ? ((VariableDeclarationSyntax)variableDeclaratorSyntax.Parent!).Type.ToString()
@@ -1099,45 +1454,63 @@ namespace Til.Unity.Lombok {
                                     ? _variableDeclaratorSyntax.Identifier.Text
                                     : ((PropertyDeclarationSyntax)cSharpSyntaxNode).Identifier.Text;
 
-                                return (StatementSyntax)IfStatement(
-                                    PrefixUnaryExpression(
+                                return (StatementSyntax)IfStatement
+                                (
+                                    PrefixUnaryExpression
+                                    (
                                         SyntaxKind.LogicalNotExpression,
-                                        InvocationExpression(
-                                            IdentifierName(
+                                        InvocationExpression
+                                        (
+                                            IdentifierName
+                                            (
                                                 $"Unity.Netcode.NetworkVariableSerialization<{type}>.AreEqual"
                                             ),
-                                            ArgumentList(
-                                                SeparatedList(
+                                            ArgumentList
+                                            (
+                                                SeparatedList
+                                                (
                                                     new[] {
-                                                        Argument(
-                                                                MemberAccessExpression(
+                                                        Argument
+                                                            (
+                                                                MemberAccessExpression
+                                                                (
                                                                     SyntaxKind.SimpleMemberAccessExpression,
-                                                                    IdentifierName(
+                                                                    IdentifierName
+                                                                    (
                                                                         "previousValue"
                                                                     ),
-                                                                    IdentifierName(
+                                                                    IdentifierName
+                                                                    (
                                                                         fieldName
                                                                     )
                                                                 )
                                                             )
-                                                            .WithRefKindKeyword(
-                                                                Token(
+                                                            .WithRefKindKeyword
+                                                            (
+                                                                Token
+                                                                (
                                                                     SyntaxKind.RefKeyword
                                                                 )
                                                             ),
-                                                        Argument(
-                                                                MemberAccessExpression(
+                                                        Argument
+                                                            (
+                                                                MemberAccessExpression
+                                                                (
                                                                     SyntaxKind.SimpleMemberAccessExpression,
-                                                                    IdentifierName(
+                                                                    IdentifierName
+                                                                    (
                                                                         "value"
                                                                     ),
-                                                                    IdentifierName(
+                                                                    IdentifierName
+                                                                    (
                                                                         fieldName
                                                                     )
                                                                 )
                                                             )
-                                                            .WithRefKindKeyword(
-                                                                Token(
+                                                            .WithRefKindKeyword
+                                                            (
+                                                                Token
+                                                                (
                                                                     SyntaxKind.RefKeyword
                                                                 )
                                                             )
@@ -1146,18 +1519,25 @@ namespace Til.Unity.Lombok {
                                             )
                                         )
                                     ),
-                                    Block(
-                                        ExpressionStatement(
-                                            AssignmentExpression(
+                                    Block
+                                    (
+                                        ExpressionStatement
+                                        (
+                                            AssignmentExpression
+                                            (
                                                 SyntaxKind.SimpleAssignmentExpression,
                                                 IdentifierName("tag"),
-                                                BinaryExpression(
+                                                BinaryExpression
+                                                (
                                                     SyntaxKind.BitwiseOrExpression,
                                                     IdentifierName("tag"),
-                                                    ParenthesizedExpression(
-                                                        BinaryExpression(
+                                                    ParenthesizedExpression
+                                                    (
+                                                        BinaryExpression
+                                                        (
                                                             SyntaxKind.LeftShiftExpression,
-                                                            LiteralExpression(
+                                                            LiteralExpression
+                                                            (
                                                                 SyntaxKind.NumericLiteralExpression,
                                                                 Literal(1)
                                                             ),
@@ -1173,22 +1553,32 @@ namespace Til.Unity.Lombok {
                         )
                         .ToArray()
                 )
-                .AddBodyStatements(
-                    ExpressionStatement(
-                        InvocationExpression(
-                            IdentifierName(
+                .AddBodyStatements
+                (
+                    ExpressionStatement
+                    (
+                        InvocationExpression
+                        (
+                            IdentifierName
+                            (
                                 "Unity.Netcode.BytePacker.WriteValuePacked"
                             ),
-                            ArgumentList(
-                                SeparatedList(
+                            ArgumentList
+                            (
+                                SeparatedList
+                                (
                                     new[] {
-                                        Argument(
-                                            IdentifierName(
+                                        Argument
+                                        (
+                                            IdentifierName
+                                            (
                                                 "writer"
                                             )
                                         ),
-                                        Argument(
-                                            IdentifierName(
+                                        Argument
+                                        (
+                                            IdentifierName
+                                            (
                                                 "tag"
                                             )
                                         ),
@@ -1198,8 +1588,10 @@ namespace Til.Unity.Lombok {
                         )
                     )
                 )
-                .AddBodyStatements(
-                    fieldList.Select(
+                .AddBodyStatements
+                (
+                    fieldList.Select
+                        (
                             (cSharpSyntaxNode, id) => {
                                 string type = cSharpSyntaxNode is VariableDeclaratorSyntax variableDeclaratorSyntax
                                     ? ((VariableDeclarationSyntax)variableDeclaratorSyntax.Parent!).Type.ToString()
@@ -1208,17 +1600,24 @@ namespace Til.Unity.Lombok {
                                     ? _variableDeclaratorSyntax.Identifier.Text
                                     : ((PropertyDeclarationSyntax)cSharpSyntaxNode).Identifier.Text;
 
-                                return (StatementSyntax)IfStatement(
-                                    BinaryExpression(
+                                return (StatementSyntax)IfStatement
+                                (
+                                    BinaryExpression
+                                    (
                                         SyntaxKind.NotEqualsExpression,
-                                        ParenthesizedExpression(
-                                            BinaryExpression(
+                                        ParenthesizedExpression
+                                        (
+                                            BinaryExpression
+                                            (
                                                 SyntaxKind.BitwiseAndExpression,
                                                 IdentifierName("tag"),
-                                                ParenthesizedExpression(
-                                                    BinaryExpression(
+                                                ParenthesizedExpression
+                                                (
+                                                    BinaryExpression
+                                                    (
                                                         SyntaxKind.LeftShiftExpression,
-                                                        LiteralExpression(
+                                                        LiteralExpression
+                                                        (
                                                             SyntaxKind.NumericLiteralExpression,
                                                             Literal(1)
                                                         ),
@@ -1227,54 +1626,75 @@ namespace Til.Unity.Lombok {
                                                 )
                                             )
                                         ),
-                                        LiteralExpression(
+                                        LiteralExpression
+                                        (
                                             SyntaxKind.NumericLiteralExpression,
                                             Literal(0)
                                         )
                                     ),
-                                    Block(
-                                        ExpressionStatement(
-                                            InvocationExpression(
-                                                IdentifierName(
+                                    Block
+                                    (
+                                        ExpressionStatement
+                                        (
+                                            InvocationExpression
+                                            (
+                                                IdentifierName
+                                                (
                                                     $"Unity.Netcode.NetworkVariableSerialization<{type}>.WriteDelta"
                                                 ),
-                                                ArgumentList(
-                                                    SeparatedList(
+                                                ArgumentList
+                                                (
+                                                    SeparatedList
+                                                    (
                                                         new List<ArgumentSyntax>() {
-                                                            Argument(
-                                                                IdentifierName(
+                                                            Argument
+                                                            (
+                                                                IdentifierName
+                                                                (
                                                                     "writer"
                                                                 )
                                                             ),
-                                                            Argument(
-                                                                    MemberAccessExpression(
+                                                            Argument
+                                                                (
+                                                                    MemberAccessExpression
+                                                                    (
                                                                         SyntaxKind.SimpleMemberAccessExpression,
-                                                                        IdentifierName(
+                                                                        IdentifierName
+                                                                        (
                                                                             "value"
                                                                         ),
-                                                                        IdentifierName(
+                                                                        IdentifierName
+                                                                        (
                                                                             fieldName
                                                                         )
                                                                     )
                                                                 )
-                                                                .WithRefKindKeyword(
-                                                                    Token(
+                                                                .WithRefKindKeyword
+                                                                (
+                                                                    Token
+                                                                    (
                                                                         SyntaxKind.RefKeyword
                                                                     )
                                                                 ),
-                                                            Argument(
-                                                                    MemberAccessExpression(
+                                                            Argument
+                                                                (
+                                                                    MemberAccessExpression
+                                                                    (
                                                                         SyntaxKind.SimpleMemberAccessExpression,
-                                                                        IdentifierName(
+                                                                        IdentifierName
+                                                                        (
                                                                             "previousValue"
                                                                         ),
-                                                                        IdentifierName(
+                                                                        IdentifierName
+                                                                        (
                                                                             fieldName
                                                                         )
                                                                     )
                                                                 )
-                                                                .WithRefKindKeyword(
-                                                                    Token(
+                                                                .WithRefKindKeyword
+                                                                (
+                                                                    Token
+                                                                    (
                                                                         SyntaxKind.RefKeyword
                                                                     )
                                                                 )
@@ -1294,77 +1714,107 @@ namespace Til.Unity.Lombok {
 
             #region duplicateValue
 
-            MethodDeclarationSyntax duplicateValue = MethodDeclaration(
-                    IdentifierName(
+            MethodDeclarationSyntax duplicateValue = MethodDeclaration
+                (
+                    IdentifierName
+                    (
                         "void"
                     ),
                     "duplicateValue"
                 )
-                .AddModifiers(
-                    Token(
+                .AddModifiers
+                (
+                    Token
+                    (
                         SyntaxKind.PublicKeyword
                     ),
-                    Token(
+                    Token
+                    (
                         SyntaxKind.StaticKeyword
                     )
                 )
-                .AddParameterListParameters(
-                    Parameter(
-                            Identifier(
+                .AddParameterListParameters
+                (
+                    Parameter
+                        (
+                            Identifier
+                            (
                                 "value"
                             )
                         )
-                        .WithType(
-                            IdentifierName(
+                        .WithType
+                        (
+                            IdentifierName
+                            (
                                 contextTargetNode.Identifier.Text
                             )
                         )
-                        .WithModifiers(
-                            TokenList(
-                                Token(
+                        .WithModifiers
+                        (
+                            TokenList
+                            (
+                                Token
+                                (
                                     SyntaxKind.InKeyword
                                 )
                             )
                         ),
-                    Parameter(
-                            Identifier(
+                    Parameter
+                        (
+                            Identifier
+                            (
                                 "duplicatedValue"
                             )
                         )
-                        .WithType(
-                            IdentifierName(
+                        .WithType
+                        (
+                            IdentifierName
+                            (
                                 contextTargetNode.Identifier.Text
                             )
                         )
-                        .WithModifiers(
-                            TokenList(
-                                Token(
+                        .WithModifiers
+                        (
+                            TokenList
+                            (
+                                Token
+                                (
                                     SyntaxKind.RefKeyword
                                 )
                             )
                         )
                 )
-                .AddBodyStatements(
+                .AddBodyStatements
+                (
                     isNotValueType
                         ? new StatementSyntax[] {
-                            IfStatement(
-                                BinaryExpression(
+                            IfStatement
+                            (
+                                BinaryExpression
+                                (
                                     SyntaxKind.EqualsExpression,
-                                    IdentifierName(
+                                    IdentifierName
+                                    (
                                         "value"
                                     ),
-                                    LiteralExpression(
+                                    LiteralExpression
+                                    (
                                         SyntaxKind.NullLiteralExpression
                                     )
                                 ),
-                                Block(
-                                    ExpressionStatement(
-                                        AssignmentExpression(
+                                Block
+                                (
+                                    ExpressionStatement
+                                    (
+                                        AssignmentExpression
+                                        (
                                             SyntaxKind.SimpleAssignmentExpression,
-                                            IdentifierName(
+                                            IdentifierName
+                                            (
                                                 "duplicatedValue"
                                             ),
-                                            IdentifierName(
+                                            IdentifierName
+                                            (
                                                 "null!"
                                             )
                                         )
@@ -1372,29 +1822,40 @@ namespace Til.Unity.Lombok {
                                     ReturnStatement()
                                 )
                             ),
-                            IfStatement(
-                                BinaryExpression(
+                            IfStatement
+                            (
+                                BinaryExpression
+                                (
                                     SyntaxKind.EqualsExpression,
-                                    IdentifierName(
+                                    IdentifierName
+                                    (
                                         "duplicatedValue"
                                     ),
-                                    LiteralExpression(
+                                    LiteralExpression
+                                    (
                                         SyntaxKind.NullLiteralExpression
                                     )
                                 ),
-                                Block(
-                                    ExpressionStatement(
-                                        AssignmentExpression(
+                                Block
+                                (
+                                    ExpressionStatement
+                                    (
+                                        AssignmentExpression
+                                        (
                                             SyntaxKind.SimpleAssignmentExpression,
-                                            IdentifierName(
+                                            IdentifierName
+                                            (
                                                 "duplicatedValue"
                                             ),
-                                            ObjectCreationExpression(
-                                                    ParseTypeName(
+                                            ObjectCreationExpression
+                                                (
+                                                    ParseTypeName
+                                                    (
                                                         contextTargetNode.Identifier.Text
                                                     )
                                                 )
-                                                .WithArgumentList(
+                                                .WithArgumentList
+                                                (
                                                     ArgumentList()
                                                 )
                                         )
@@ -1404,8 +1865,10 @@ namespace Til.Unity.Lombok {
                         }
                         : Array.Empty<StatementSyntax>()
                 )
-                .AddBodyStatements(
-                    fieldList.Select(
+                .AddBodyStatements
+                (
+                    fieldList.Select
+                        (
                             cSharpSyntaxNode => {
                                 string type = cSharpSyntaxNode is VariableDeclaratorSyntax variableDeclaratorSyntax
                                     ? ((VariableDeclarationSyntax)variableDeclaratorSyntax.Parent!).Type.ToString()
@@ -1414,45 +1877,63 @@ namespace Til.Unity.Lombok {
                                     ? _variableDeclaratorSyntax.Identifier.Text
                                     : ((PropertyDeclarationSyntax)cSharpSyntaxNode).Identifier.Text;
 
-                                return (StatementSyntax)IfStatement(
-                                        PrefixUnaryExpression(
+                                return (StatementSyntax)IfStatement
+                                    (
+                                        PrefixUnaryExpression
+                                        (
                                             SyntaxKind.LogicalNotExpression,
-                                            InvocationExpression(
-                                                IdentifierName(
+                                            InvocationExpression
+                                            (
+                                                IdentifierName
+                                                (
                                                     $"Unity.Netcode.NetworkVariableSerialization<{type}>.AreEqual"
                                                 ),
-                                                ArgumentList(
-                                                    SeparatedList(
+                                                ArgumentList
+                                                (
+                                                    SeparatedList
+                                                    (
                                                         new[] {
-                                                            Argument(
-                                                                    MemberAccessExpression(
+                                                            Argument
+                                                                (
+                                                                    MemberAccessExpression
+                                                                    (
                                                                         SyntaxKind.SimpleMemberAccessExpression,
-                                                                        IdentifierName(
+                                                                        IdentifierName
+                                                                        (
                                                                             "duplicatedValue"
                                                                         ),
-                                                                        IdentifierName(
+                                                                        IdentifierName
+                                                                        (
                                                                             fieldName
                                                                         )
                                                                     )
                                                                 )
-                                                                .WithRefKindKeyword(
-                                                                    Token(
+                                                                .WithRefKindKeyword
+                                                                (
+                                                                    Token
+                                                                    (
                                                                         SyntaxKind.RefKeyword
                                                                     )
                                                                 ),
-                                                            Argument(
-                                                                    MemberAccessExpression(
+                                                            Argument
+                                                                (
+                                                                    MemberAccessExpression
+                                                                    (
                                                                         SyntaxKind.SimpleMemberAccessExpression,
-                                                                        IdentifierName(
+                                                                        IdentifierName
+                                                                        (
                                                                             "value"
                                                                         ),
-                                                                        IdentifierName(
+                                                                        IdentifierName
+                                                                        (
                                                                             fieldName
                                                                         )
                                                                     )
                                                                 )
-                                                                .WithRefKindKeyword(
-                                                                    Token(
+                                                                .WithRefKindKeyword
+                                                                (
+                                                                    Token
+                                                                    (
                                                                         SyntaxKind.RefKeyword
                                                                     )
                                                                 )
@@ -1461,39 +1942,55 @@ namespace Til.Unity.Lombok {
                                                 )
                                             )
                                         ),
-                                        Block(
-                                            ExpressionStatement(
-                                                InvocationExpression(
-                                                    IdentifierName(
+                                        Block
+                                        (
+                                            ExpressionStatement
+                                            (
+                                                InvocationExpression
+                                                (
+                                                    IdentifierName
+                                                    (
                                                         $"Unity.Netcode.NetworkVariableSerialization<{type}>.Duplicate"
                                                     ),
-                                                    ArgumentList(
-                                                        SeparatedList(
+                                                    ArgumentList
+                                                    (
+                                                        SeparatedList
+                                                        (
                                                             new List<ArgumentSyntax>() {
-                                                                Argument(
-                                                                    MemberAccessExpression(
+                                                                Argument
+                                                                (
+                                                                    MemberAccessExpression
+                                                                    (
                                                                         SyntaxKind.SimpleMemberAccessExpression,
-                                                                        IdentifierName(
+                                                                        IdentifierName
+                                                                        (
                                                                             "value"
                                                                         ),
-                                                                        IdentifierName(
+                                                                        IdentifierName
+                                                                        (
                                                                             fieldName
                                                                         )
                                                                     )
                                                                 ),
-                                                                Argument(
-                                                                        MemberAccessExpression(
+                                                                Argument
+                                                                    (
+                                                                        MemberAccessExpression
+                                                                        (
                                                                             SyntaxKind.SimpleMemberAccessExpression,
-                                                                            IdentifierName(
+                                                                            IdentifierName
+                                                                            (
                                                                                 "duplicatedValue"
                                                                             ),
-                                                                            IdentifierName(
+                                                                            IdentifierName
+                                                                            (
                                                                                 fieldName
                                                                             )
                                                                         )
                                                                     )
-                                                                    .WithRefKindKeyword(
-                                                                        Token(
+                                                                    .WithRefKindKeyword
+                                                                    (
+                                                                        Token
+                                                                        (
                                                                             SyntaxKind.RefKeyword
                                                                         )
                                                                     )
@@ -1514,77 +2011,254 @@ namespace Til.Unity.Lombok {
 
             #region equals
 
-            MethodDeclarationSyntax equals = MethodDeclaration(
-                    IdentifierName(
+            MethodDeclarationSyntax equals = MethodDeclaration
+                (
+                    IdentifierName
+                    (
                         "bool"
                     ),
                     "equals"
                 )
-                .AddModifiers(
-                    Token(
+                .AddModifiers
+                (
+                    Token
+                    (
                         SyntaxKind.PublicKeyword
                     ),
-                    Token(
+                    Token
+                    (
                         SyntaxKind.StaticKeyword
                     )
                 )
-                .AddParameterListParameters(
-                    Parameter(
-                            Identifier(
+                .AddParameterListParameters
+                (
+                    Parameter
+                        (
+                            Identifier
+                            (
                                 "a"
                             )
                         )
-                        .WithType(
-                            IdentifierName(
+                        .WithType
+                        (
+                            IdentifierName
+                            (
                                 contextTargetNode.Identifier.Text
                             )
                         )
-                        .WithModifiers(
-                            TokenList(
-                                Token(
+                        .WithModifiers
+                        (
+                            TokenList
+                            (
+                                Token
+                                (
                                     SyntaxKind.RefKeyword
                                 )
                             )
                         ),
-                    Parameter(
-                            Identifier(
+                    Parameter
+                        (
+                            Identifier
+                            (
                                 "b"
                             )
                         )
-                        .WithType(
-                            IdentifierName(
+                        .WithType
+                        (
+                            IdentifierName
+                            (
                                 contextTargetNode.Identifier.Text
                             )
                         )
-                        .WithModifiers(
-                            TokenList(
-                                Token(
+                        .WithModifiers
+                        (
+                            TokenList
+                            (
+                                Token
+                                (
                                     SyntaxKind.RefKeyword
                                 )
                             )
                         )
                 )
-                .AddBodyStatements(
-                    ReturnStatement(
-                        InvocationExpression(
-                            IdentifierName("object.Equals"),
-                            ArgumentList(
-                                SeparatedList(
-                                    new[] {
-                                        Argument(
-                                            IdentifierName(
-                                                "a"
-                                            )
-                                        ),
-                                        Argument(
-                                            IdentifierName(
-                                                "b"
-                                            )
-                                        )
-
-                                    }
+                .AddBodyStatements
+                (
+                    IfStatement
+                    (
+                        BinaryExpression
+                        (
+                            SyntaxKind.EqualsExpression,
+                            IdentifierName
+                            (
+                                "a"
+                            ),
+                            IdentifierName
+                            (
+                                "b"
+                            )
+                        ),
+                        Block
+                        (
+                            ReturnStatement
+                            (
+                                LiteralExpression
+                                (
+                                    SyntaxKind.TrueLiteralExpression
                                 )
                             )
+                        )
+                    ),
+                    IfStatement
+                    (
+                        BinaryExpression
+                        (
+                            SyntaxKind.EqualsExpression,
+                            IdentifierName
+                            (
+                                "a"
+                            ),
+                            IdentifierName
+                            (
+                                "null"
+                            )
+                        ),
+                        Block
+                        (
+                            ReturnStatement
+                            (
+                                LiteralExpression
+                                (
+                                    SyntaxKind.FalseLiteralExpression
+                                )
+                            )
+                        )
+                    ),
+                    IfStatement
+                    (
+                        BinaryExpression
+                        (
+                            SyntaxKind.EqualsExpression,
+                            IdentifierName
+                            (
+                                "b"
+                            ),
+                            IdentifierName
+                            (
+                                "null"
+                            )
+                        ),
+                        Block
+                        (
+                            ReturnStatement
+                            (
+                                LiteralExpression
+                                (
+                                    SyntaxKind.FalseLiteralExpression
+                                )
+                            )
+                        )
+                    )
+                )
+                .AddBodyStatements
+                (
+                    fieldList.Select
+                        (
+                            cSharpSyntaxNode => {
+                                string type = cSharpSyntaxNode is VariableDeclaratorSyntax variableDeclaratorSyntax
+                                    ? ((VariableDeclarationSyntax)variableDeclaratorSyntax.Parent!).Type.ToString()
+                                    : ((PropertyDeclarationSyntax)cSharpSyntaxNode).Type.ToString();
+                                string fieldName = cSharpSyntaxNode is VariableDeclaratorSyntax _variableDeclaratorSyntax
+                                    ? _variableDeclaratorSyntax.Identifier.Text
+                                    : ((PropertyDeclarationSyntax)cSharpSyntaxNode).Identifier.Text;
+                                return IfStatement
+                                (
+                                    PrefixUnaryExpression
+                                    (
+                                        SyntaxKind.LogicalNotExpression,
+                                        InvocationExpression
+                                        (
+                                            IdentifierName
+                                            (
+                                                $"Unity.Netcode.NetworkVariableSerialization<{type}>.AreEqual"
+                                            ),
+                                            ArgumentList
+                                            (
+                                                SeparatedList
+                                                (
+                                                    new[] {
+                                                        Argument
+                                                            (
+                                                                MemberAccessExpression
+                                                                (
+                                                                    SyntaxKind.SimpleMemberAccessExpression,
+                                                                    IdentifierName
+                                                                    (
+                                                                        "a"
+                                                                    ),
+                                                                    IdentifierName
+                                                                    (
+                                                                        fieldName
+                                                                    )
+                                                                )
+                                                            )
+                                                            .WithRefKindKeyword
+                                                            (
+                                                                Token
+                                                                (
+                                                                    SyntaxKind.RefKeyword
+                                                                )
+                                                            ),
+                                                        Argument
+                                                            (
+                                                                MemberAccessExpression
+                                                                (
+                                                                    SyntaxKind.SimpleMemberAccessExpression,
+                                                                    IdentifierName
+                                                                    (
+                                                                        "b"
+                                                                    ),
+                                                                    IdentifierName
+                                                                    (
+                                                                        fieldName
+                                                                    )
+                                                                )
+                                                            )
+                                                            .WithRefKindKeyword
+                                                            (
+                                                                Token
+                                                                (
+                                                                    SyntaxKind.RefKeyword
+                                                                )
+                                                            )
+                                                    }
+                                                )
+                                            )
+                                        )
+                                    ),
+                                    Block
+                                    (
+                                        ReturnStatement
+                                        (
+                                            LiteralExpression
+                                            (
+                                                SyntaxKind.FalseLiteralExpression
+                                            )
+                                        )
+                                    )
+                                );
+
+                            }
+                        )
+                        .OfType<StatementSyntax>()
+                        .ToArray()
+                )
+                .AddBodyStatements
+                (
+                    ReturnStatement
+                    (
+                        LiteralExpression
+                        (
+                            SyntaxKind.TrueLiteralExpression
                         )
                     )
                 );
@@ -1592,17 +2266,22 @@ namespace Til.Unity.Lombok {
             #endregion
 
             CompilationUnitSyntax compilationUnitSyntax = CompilationUnit()
-                .WithUsings(
+                .WithUsings
+                (
                     contextTargetNode.GetUsings()
                 )
-                .AddMembers(
-                    NamespaceDeclaration(
+                .AddMembers
+                (
+                    NamespaceDeclaration
+                        (
                             @namespace
                         )
-                        .AddMembers(
+                        .AddMembers
+                        (
                             contextTargetNode
                                 .CreateNewPartialClass()
-                                .AddMembers(
+                                .AddMembers
+                                (
                                     readField,
                                     readDeltaField,
                                     writeField,
@@ -1610,31 +2289,44 @@ namespace Til.Unity.Lombok {
                                     duplicateValue,
                                     equals
                                 )
-                                .AddMembers(
-                                    MethodDeclaration(
-                                            IdentifierName(
+                                .AddMembers
+                                (
+                                    MethodDeclaration
+                                        (
+                                            IdentifierName
+                                            (
                                                 "void"
                                             ),
                                             contextTargetNode.Identifier.Text + "InitializeOnLoad"
                                         )
-                                        .AddModifiers(
-                                            Token(
+                                        .AddModifiers
+                                        (
+                                            Token
+                                            (
                                                 SyntaxKind.ProtectedKeyword
                                             ),
-                                            Token(
+                                            Token
+                                            (
                                                 SyntaxKind.StaticKeyword
                                             )
                                         )
-                                        .AddAttributeLists(
-                                            AttributeList(
-                                                SeparatedList(
+                                        .AddAttributeLists
+                                        (
+                                            AttributeList
+                                            (
+                                                SeparatedList
+                                                (
                                                     new[] {
-                                                        Attribute(
+                                                        Attribute
+                                                        (
                                                             ParseName("UnityEngine.RuntimeInitializeOnLoadMethodAttribute"),
-                                                            AttributeArgumentList(
-                                                                SeparatedList(
+                                                            AttributeArgumentList
+                                                            (
+                                                                SeparatedList
+                                                                (
                                                                     new[] {
-                                                                        AttributeArgument(
+                                                                        AttributeArgument
+                                                                        (
                                                                             ParseTypeName("UnityEngine.RuntimeInitializeLoadType.AfterAssembliesLoaded")
                                                                         )
                                                                     }
@@ -1645,12 +2337,17 @@ namespace Til.Unity.Lombok {
                                                 )
                                             )
                                         )
-                                        .AddAttributeLists(
-                                            AttributeList(
-                                                SeparatedList(
+                                        .AddAttributeLists
+                                        (
+                                            AttributeList
+                                            (
+                                                SeparatedList
+                                                (
                                                     new[] {
-                                                        Attribute(
-                                                            ParseName(
+                                                        Attribute
+                                                        (
+                                                            ParseName
+                                                            (
                                                                 "UnityEditor.InitializeOnLoadMethodAttribute"
                                                             )
                                                         )
@@ -1658,99 +2355,135 @@ namespace Til.Unity.Lombok {
                                                 )
                                             )
                                         )
-                                        .AddBodyStatements(
-                                            ExpressionStatement(
-                                                AssignmentExpression(
+                                        .AddBodyStatements
+                                        (
+                                            ExpressionStatement
+                                            (
+                                                AssignmentExpression
+                                                (
                                                     SyntaxKind.SimpleAssignmentExpression,
-                                                    MemberAccessExpression(
+                                                    MemberAccessExpression
+                                                    (
                                                         SyntaxKind.SimpleMemberAccessExpression,
-                                                        ParseTypeName(
+                                                        ParseTypeName
+                                                        (
                                                             $"Unity.Netcode.UserNetworkVariableSerialization<{contextTargetNode.Identifier.Text}>"
                                                         ),
-                                                        IdentifierName(
+                                                        IdentifierName
+                                                        (
                                                             "ReadValue"
                                                         )
                                                     ),
-                                                    IdentifierName(
+                                                    IdentifierName
+                                                    (
                                                         "read"
                                                     )
                                                 )
                                             ),
-                                            ExpressionStatement(
-                                                AssignmentExpression(
+                                            ExpressionStatement
+                                            (
+                                                AssignmentExpression
+                                                (
                                                     SyntaxKind.SimpleAssignmentExpression,
-                                                    MemberAccessExpression(
+                                                    MemberAccessExpression
+                                                    (
                                                         SyntaxKind.SimpleMemberAccessExpression,
-                                                        ParseTypeName(
+                                                        ParseTypeName
+                                                        (
                                                             $"Unity.Netcode.UserNetworkVariableSerialization<{contextTargetNode.Identifier.Text}>"
                                                         ),
-                                                        IdentifierName(
+                                                        IdentifierName
+                                                        (
                                                             "WriteValue"
                                                         )
                                                     ),
-                                                    IdentifierName(
+                                                    IdentifierName
+                                                    (
                                                         "write"
                                                     )
                                                 )
                                             ),
-                                            ExpressionStatement(
-                                                AssignmentExpression(
+                                            ExpressionStatement
+                                            (
+                                                AssignmentExpression
+                                                (
                                                     SyntaxKind.SimpleAssignmentExpression,
-                                                    MemberAccessExpression(
+                                                    MemberAccessExpression
+                                                    (
                                                         SyntaxKind.SimpleMemberAccessExpression,
-                                                        ParseTypeName(
+                                                        ParseTypeName
+                                                        (
                                                             $"Unity.Netcode.UserNetworkVariableSerialization<{contextTargetNode.Identifier.Text}>"
                                                         ),
-                                                        IdentifierName(
+                                                        IdentifierName
+                                                        (
                                                             "WriteDelta"
                                                         )
                                                     ),
-                                                    IdentifierName(
+                                                    IdentifierName
+                                                    (
                                                         "writeDelta"
                                                     )
                                                 )
                                             ),
-                                            ExpressionStatement(
-                                                AssignmentExpression(
+                                            ExpressionStatement
+                                            (
+                                                AssignmentExpression
+                                                (
                                                     SyntaxKind.SimpleAssignmentExpression,
-                                                    MemberAccessExpression(
+                                                    MemberAccessExpression
+                                                    (
                                                         SyntaxKind.SimpleMemberAccessExpression,
-                                                        ParseTypeName(
+                                                        ParseTypeName
+                                                        (
                                                             $"Unity.Netcode.UserNetworkVariableSerialization<{contextTargetNode.Identifier.Text}>"
                                                         ),
-                                                        IdentifierName(
+                                                        IdentifierName
+                                                        (
                                                             "ReadDelta"
                                                         )
                                                     ),
-                                                    IdentifierName(
+                                                    IdentifierName
+                                                    (
                                                         "readDelta"
                                                     )
                                                 )
                                             ),
-                                            ExpressionStatement(
-                                                AssignmentExpression(
+                                            ExpressionStatement
+                                            (
+                                                AssignmentExpression
+                                                (
                                                     SyntaxKind.SimpleAssignmentExpression,
-                                                    MemberAccessExpression(
+                                                    MemberAccessExpression
+                                                    (
                                                         SyntaxKind.SimpleMemberAccessExpression,
-                                                        ParseTypeName(
+                                                        ParseTypeName
+                                                        (
                                                             $"Unity.Netcode.UserNetworkVariableSerialization<{contextTargetNode.Identifier.Text}>"
                                                         ),
-                                                        IdentifierName(
+                                                        IdentifierName
+                                                        (
                                                             "DuplicateValue"
                                                         )
                                                     ),
-                                                    IdentifierName(
+                                                    IdentifierName
+                                                    (
                                                         "duplicateValue"
                                                     )
                                                 )
                                             ),
-                                            ExpressionStatement(
-                                                InvocationExpression(
-                                                    IdentifierName(
+                                            ExpressionStatement
+                                            (
+                                                InvocationExpression
+                                                (
+                                                    IdentifierName
+                                                    (
                                                         $"typeof(Unity.Netcode.NetworkVariableSerialization<{contextTargetNode.Identifier.Text}>).GetProperty(\"AreEqual\", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public)?.SetValue"
                                                     ),
-                                                    ArgumentList(
-                                                        SeparatedList(
+                                                    ArgumentList
+                                                    (
+                                                        SeparatedList
+                                                        (
                                                             new[] {
                                                                 Argument(IdentifierName("null")),
                                                                 Argument(IdentifierName($"new Unity.Netcode.NetworkVariableSerialization<{contextTargetNode.Identifier.Text}>.EqualsDelegate(equals)"))
@@ -1768,11 +2501,14 @@ namespace Til.Unity.Lombok {
                 .NormalizeWhitespace()
                 .ToFullString();
 
-            return new GeneratorResult(
-                contextTargetNode.GetHintName(
+            return new GeneratorResult
+            (
+                contextTargetNode.GetHintName
+                (
                     @namespace
                 ),
-                SourceText.From(
+                SourceText.From
+                (
                     fullString.Replace("[UnityEditor.InitializeOnLoadMethodAttribute]", "\n#if UNITY_EDITOR\n        [UnityEditor.InitializeOnLoadMethodAttribute]\n#endif\n"),
                     Encoding.UTF8
                 )

@@ -10,7 +10,7 @@ namespace AABB {
         [Get]
         [Set]
         public int x { get; set; }
-
+ 
         [BufferField]
         [Get]
         [Set]
@@ -19,7 +19,7 @@ namespace AABB {
         [BufferField]
         [Get]
         [Set]
-        public int z { get; set; }
+        public int z { get; set; }  
 
     }
 
